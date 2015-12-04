@@ -52,6 +52,15 @@ object Application extends Controller {
     implicit request =>
       {
         val url = "http://opendata.epa.gov.tw/ws/Data/AQX/?$orderby=SiteName&$skip=0&$top=1000&format=json"
+		val sites = List("二林",
+"線西",
+"崙背",
+"斗六",
+"臺西",
+"麥寮",
+"竹山",
+"嘉義",
+"朴子")
         WS.url(url).get().map {
           response =>
             try {
@@ -62,7 +71,7 @@ object Application extends Controller {
                   Ok(views.html.realtime(Seq.empty[EpaRealtimeData]))
                 },
                 data => {
-                  val kh_data = data.filter { d => d.county == "雲林縣" || d.county == "彰化縣" || d.county == "嘉義縣" }
+                  val kh_data = data.filter { d => sites.contains(d.siteName) }
                   Ok(views.html.realtime(kh_data))
                 })
             } catch {
