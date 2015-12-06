@@ -15,3 +15,15 @@ POST	/authenticate				controllers.Login.authenticate
 GET		/HistoryTrend				controllers.Application.historyTrend
 GET		/JSON/HistoryTrend/:epaMonitor/:monitorType/:start/:end	controllers.Application.historyTrendChart(epaMonitor, monitorType, start, end, outputTypeStr="html")
 GET		/Excel/HistoryTrend/:epaMonitor/:monitorType/:start/:end	controllers.Application.historyTrendChart(epaMonitor, monitorType, start, end, outputTypeStr="excel")
+
+GET		/History					controllers.Application.history
+GET		/HistoryReport/:epaMonitor/:monitorType/:start/:end	controllers.Application.historyReport(epaMonitor, monitorType, start, end)
+
+GET		/WindRose				controllers.Application.windRose
+GET		/MonitorTypeRose		controllers.Application.monitorTypeRose
+GET		/WindRoseReport/:monitor/:monitorType/:nWays/:start/:end	controllers.Application.windRoseReport(monitor, monitorType, nWays:Int, start, end)
+
+GET		/Pm25Query				controllers.Application.pm25Query
+GET		/Pm10Query				controllers.Application.pm10Query
+GET		/OverLawReport/:epaMonitor/:monitorType/:start/:end	controllers.Application.overLawReport(epaMonitor, monitorType, start, end)
+GET		/SiteInfo				controllers.Application.siteInfo

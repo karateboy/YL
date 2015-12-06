@@ -1,0 +1,46 @@
+@* historyReport Template File *@
+@import com.github.nscala_time.time.Imports._
+@(monitorType:MonitorType.Value, start:DateTime, end:DateTime, records:Array[List[Application.OverLawEntry]])
+
+<H3>@MonitorType.map(monitorType).desp 不良日統計, 法規標準(@MonitorType.map(monitorType).std_law.get @MonitorType.map(monitorType).unit)</H3>
+<H5>區間:@start.toString("YYYY-MM-dd HH:mm")~@end.toString("YYYY-MM-dd HH:mm")</H5>
+
+<table id="historyReport" class="table">
+<thead>
+	<tr>
+		<th>時間</th>
+		<th>測站</th>
+		<th>日均值</th>
+		<th>當日最大值</th>
+		<th>當日最小值</th>
+	</tr>
+</thead>
+<tbody>
+	@for(rs <- records){
+		@for(r <- rs){
+		<tr>
+			<td>@r.date.toString("YYYY-MM-dd")</td>
+			<td>@EpaMonitor.map(r.monitor).name</td>
+			<td>@MonitorType.format(monitorType, Some(r.dayAvg))</td>
+			<td>@MonitorType.format(monitorType, Some(r.max))</td>
+			<td>@MonitorType.format(monitorType, Some(r.min))</td>						
+		</tr>
+		}
+	}
+</tbody>
+</table>
+<script>
+	var local_url = '/assets/localization/zh_tw.json';
+</script>
+<script>
+$(document ).ready(function() {
+	$('#historyReport').dataTable( {
+		responsive: true,
+		language: {
+			url: local_url,							
+		},
+		"paging":   false,
+		searching: false
+	} );
+});
+</script>

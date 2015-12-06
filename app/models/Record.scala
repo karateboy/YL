@@ -28,4 +28,50 @@ object Record {
       }.list().apply()
     }
   }
+  
+  def getMtRose(monitor: EpaMonitor.Value, monitorType:MonitorType.Value, start: DateTime, end: DateTime, level:List[Float], nDiv: Int = 16) = {
+    val mt_values = getEpaHourRecord(monitor, monitorType, start, end)
+    val wind_dirs = getEpaHourRecord(monitor, MonitorType.C212, start, end)
+    val windRecords = wind_dirs.zip(mt_values)
+
+    val step = 360f / nDiv
+    import scala.collection.mutable.ListBuffer
+    val windDirPair =
+      for (d <- 0 to nDiv - 1) yield {
+        (d -> ListBuffer[Float]())
+      }
+    val windMap = Map(windDirPair: _*)
+
+    var total = 0
+    for (w <- windRecords) {
+      if (w._1.time == w._2.time) {
+        val dir = (Math.ceil((w._1.value - (step/2)) / step).toInt)% nDiv
+        windMap(dir) += w._2.value
+        total += 1
+      }
+    }
+
+    def winSpeedPercent(winSpeedList: ListBuffer[Float]) = {
+      val count = new Array[Float](level.length+1)
+      def getIdx(v:Float):Int={
+        for(i <- 0 to level.length-1){
+          if(v < level(i))
+            return i
+        }
+        
+        return level.length
+      }
+      
+      for (w <- winSpeedList) {
+        val i = getIdx(w)
+        count(i) +=1
+      }
+
+      assert(total != 0)
+      count.map(_ * 100 / total)
+    }
+
+    windMap.map(kv => (kv._1, winSpeedPercent(kv._2)))
+  }
+
 }
