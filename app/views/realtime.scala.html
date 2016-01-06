@@ -35,12 +35,24 @@
 		<link href="assets/css/essentials.css" rel="stylesheet" type="text/css" />
 		<link href="assets/css/layout.css" rel="stylesheet" type="text/css" />
 		<link href="assets/css/layout-responsive.css" rel="stylesheet" type="text/css" />
-		<link href="assets/css/color_scheme/darkgreen.css" rel="stylesheet" type="text/css" /><!-- brown: default style -->
+		<link href="assets/css/color_scheme/blue.css" rel="stylesheet" type="text/css" /><!-- brown: default style -->
 		<!--<link id="css_dark_skin" href="assets/css/layout-dark.css" rel="stylesheet" type="text/css" />--><!-- DARK SKIN -->
 
 		<!-- COUNTDOWN CSS -->
 		<link href="assets/css/countdown.css" rel="stylesheet" type="text/css" />
 
+    	<!-- Data Tables -->
+
+    	<link href="assets/css/plugins/dataTables/dataTables.bootstrap.css" rel="stylesheet">
+    	<link href="assets/css/plugins/dataTables/dataTables.responsive.css" rel="stylesheet">
+    	<link href="assets/css/plugins/dataTables/dataTables.tableTools.min.css" rel="stylesheet">
+
+		<link href="assets/css/plugins/dataTables/jquery.dataTables.min.css" rel="stylesheet">
+
+		<!-- Datepicker --> 
+		<link href="assets/css/plugins/datepicker/datepicker3.css" rel="stylesheet">	
+		<link href="assets/css/plugins/datetimepicker/bootstrap-datetimepicker.min.css" rel="stylesheet">
+	
 		<!-- Morenizr -->
 		<script type="text/javascript" src="assets/plugins/modernizr.min.js"></script>
 		
@@ -66,6 +78,7 @@
 		<script type="text/javascript" src="assets/plugins/revolution-slider/js/jquery.themepunch.tools.min.js"></script>
 		<script type="text/javascript" src="assets/plugins/revolution-slider/js/jquery.themepunch.revolution.min.js"></script>
 		<script type="text/javascript" src="assets/js/slider_revolution.js"></script>
+		
 
 		<script type="text/javascript" src="assets/js/scripts.js"></script>
 
@@ -75,7 +88,6 @@
 		<script src='assets/js/plugins/dataTables/jquery.dataTables.min.js'></script>
     	<script src='assets/js/plugins/dataTables/dataTables.bootstrap.js'></script>
     	<script src='assets/js/plugins/dataTables/dataTables.responsive.min.js'></script>
-    	<script src='assets/js/plugins/dataTables/dataTables.tableTools.min.js'></script>
     
 		<script src='assets/js/moment-with-locales.min.js'></script>
 		<script src='assets/js/plugins/datetimepicker/bootstrap-datetimepicker.min.js'></script>
@@ -160,26 +172,39 @@
 									<li>
 										<a href="#" onclick="loadPage('/HistoryTrend','歷史趨勢查詢');"><i class="fa fa-star-o"></i>歷史趨勢查詢</a>
 									</li>
+								<!--	
 									<li>
 										<a href="#" onclick="loadPage('/WindRose','風瑰圖');"><i class="fa fa-star-o"></i>風瑰圖</a>										
 									</li>
 									<li>
 										<a href="#" onclick="loadPage('/MonitorTypeRose','汙染玫瑰圖');"><i class="fa fa-star-o"></i>汙染玫瑰圖</a>										
-									</li>									
+									</li>
+									<li>
+										<a href="#" onclick="loadPage('/testJson4s','測試');"><i class="fa fa-star-o"></i>測試</a>
+									</li>
+								-->									
 								</ul>
 							</li>
 							<li class="dropdown ">
 								<a class="dropdown-toggle" href="#">
-									<i class="fa fa-calculator">統計分析</i>
+									<i class="fa fa-calculator">篩選排序</i>
 								</a>
 								<ul class="dropdown-menu">
 									<li>
-										<a href="#" onclick="loadPage('/Pm25Query','PM2.5不良日統計');" ><i class="fa fa-star-o"></i>PM2.5不良日統計</a>										
+										<a href="#" onclick="loadPage('/Pm25Query','PM2.5超標篩選');" ><i class="fa fa-star-o"></i>PM2.5超標篩選</a>										
 									</li>
 									<li>
-										<a href="#" onclick="loadPage('/Pm10Query','PM10不良日統計');" ><i class="fa fa-star-o"></i>PM10不良日統計</a>										
-									</li>									
-																		
+										<a href="#" onclick="loadPage('/PsiQuery','PSI超標篩選');" ><i class="fa fa-star-o"></i>PSI超標篩選</a>										
+									</li>
+									<li>
+										<a href="#" onclick="loadPage('/SitePsiOrder','各測站PSI>100日數排序');" ><i class="fa fa-star-o"></i>各測站PSI>100日數排序</a>										
+									</li>
+									<li>
+										<a href="#" onclick="loadPage('/DistrictPsiOrder','行政轄區PSI>100日數排序');" ><i class="fa fa-star-o"></i>行政轄區PSI>100日數排序</a>										
+									</li>
+									<li>
+										<a href="#" onclick="loadPage('/DistrictPm10Order','行政轄區懸浮微粒PM10排序');" ><i class="fa fa-star-o"></i>行政轄區懸浮微粒PM10排序</a>										
+									</li>																		
 								</ul>
 							</li>
 							<li class="dropdown">

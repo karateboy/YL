@@ -1,34 +1,56 @@
 package models
+import scalikejdbc._
+import scalikejdbc.config._
+import scala.collection.Map
 
 /**
  * @author user
  */
-case class EpaMonitor(name:String, id:Int)
-object EpaMonitor extends Enumeration{
-  val Erlin = Value("Erlin")
-  val XianXi = Value("XianXi")
-  val Lunbei = Value("Lunbei")
-  val DoLiao = Value("DoLiao")
-  val Taixi = Value("Taixi")
-  val Mailiao = Value("Mailiao")
-  val ZuSan = Value("ZuSan")
-  val Jaii = Value("Jaii")
-  val Puzi = Value("Puzi")
-    
+case class EpaMonitor(id:Int, name:String)
+object EpaMonitor extends Enumeration{    
+  var monitorList = 
+    DB readOnly{ implicit session =>
+      sql"""
+        Select * 
+        From EpaMonitor
+        """.map { r =>           
+          EpaMonitor(r.int(1), r.string(2))}.list.apply
+    }
   
-  val map=Map(
-    Erlin->EpaMonitor("環保署二林站", 35),
-    Puzi->EpaMonitor("環保署朴子站", 40),
-    Lunbei->EpaMonitor("環保署崙背站", 38),
-    Taixi->EpaMonitor("環保署臺西站", 41),
-    Mailiao->EpaMonitor("環保署麥寮站", 83),
-	XianXi->EpaMonitor("環保署線西站", 34),
-	DoLiao->EpaMonitor("環保署斗六站", 37),
-	ZuSan->EpaMonitor("環保署竹山站", 69),
-	Jaii->EpaMonitor("環保署嘉義站", 42)
-  )
+  var map:Map[Value, EpaMonitor] = Map(monitorList.map{e=>Value(e.id, e.name)->e}:_*)
+  var idMap:Map[Int, Value] = Map(monitorList.map{e=>e.id->EpaMonitor(e.id)}:_*)
+  var mvList = monitorList.map{m=>EpaMonitor.withName(m.name)}
+
+  def refresh = {
+    monitorList =
+      DB readOnly { implicit session =>
+        sql"""
+        Select * 
+        From EpaMonitor
+        """.map { r =>
+          EpaMonitor(r.int(1), r.string(2))
+        }.list.apply
+      }
+    map = Map(monitorList.map { e => Value(e.id, e.name) -> e }: _*)
+    mvList = map.keys.toList
+  }
   
-  val idMap = map.map(r=>(r._2.id, r._1))
+  def newEpaMonitor(m : EpaMonitor) = {
+    DB localTx { implicit session =>
+      sql"""
+        INSERT INTO [dbo].[EpaMonitor]
+           ([SiteId]
+           ,[Name])
+     VALUES
+           (${m.id},${m.name})
+        """.update.apply
+    }
+    monitorList = (m::monitorList).sortBy { x => x.name }
+    val v = Value(m.id, m.name)
+    map = map + (v -> m)
+    idMap = idMap + (m.id -> v)
+    mvList = map.keys.toList
+  }
   
-  val epaList = values.toList.sorted
+  val YunlinMonitorList = List(37, 38, 41, 83).map { EpaMonitor.idMap }
 }

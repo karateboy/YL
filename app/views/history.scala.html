@@ -38,8 +38,8 @@
 	            			<label class="col-lg-1 control-label">測項</label>
 	            			<div class="col-lg-11">
 	            				<div class="btn-group" data-toggle="buttons">	            				
-	            				@for(mt<-MonitorType.epaList){
-	            					@if(mt == MonitorType.epaList.head){
+	            				@for(mt<-MonitorType.values){
+	            					@if(mt == MonitorType.values.head){
 	            						<label class="btn btn-outline btn-primary dim active">
 										<input type="radio" name="monitorType" id="@mt" checked>@MonitorType.map(mt).desp</label>	
 	            					}else{

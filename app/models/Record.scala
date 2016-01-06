@@ -8,30 +8,26 @@ import models.ModelHelper._
 import models._
 
 object Record {
-  case class EpaHourRecord(monitor: EpaMonitor.Value, time: DateTime, monitorType: MonitorType.Value, value: Float)
+  case class EpaHourRecord(monitor: EpaMonitor.Value, time: DateTime, monitorType: MonitorType.Value, value: Option[Float])
   def getEpaHourRecord(epaMonitor: EpaMonitor.Value, monitorType: MonitorType.Value, startTime: DateTime, endTime: DateTime)(implicit session: DBSession = AutoSession) = {
     val start: Timestamp = startTime
     val end: Timestamp = endTime
     val monitorId = EpaMonitor.map(epaMonitor).id
-    val monitorTypeStrOpt = MonitorType.map(monitorType).epa_mapping
-    if (monitorTypeStrOpt.isEmpty)
-      List.empty[EpaHourRecord]
-    else {
-      val monitorTypeStr = monitorTypeStrOpt.get
+    val monitorTypeStr = MonitorType.map(monitorType).itemId
       sql"""
         Select * 
         From hour_data
         Where MStation=${monitorId} and MItem=${monitorTypeStr} and MDate >= ${start} and MDate < ${end}
         ORDER BY MDate ASC
       """.map {
-        rs => EpaHourRecord(EpaMonitor.idMap(rs.int(2)), rs.timestamp(3), MonitorType.epaMap(rs.string(4)), rs.float(5))
+        rs => EpaHourRecord(EpaMonitor.idMap(rs.int(2)), rs.timestamp(3), MonitorType.epaMap(rs.string(4)), rs.floatOpt(5))
       }.list().apply()
-    }
   }
   
   def getMtRose(monitor: EpaMonitor.Value, monitorType:MonitorType.Value, start: DateTime, end: DateTime, level:List[Float], nDiv: Int = 16) = {
     val mt_values = getEpaHourRecord(monitor, monitorType, start, end)
-    val wind_dirs = getEpaHourRecord(monitor, MonitorType.C212, start, end)
+    //val wind_dirs = getEpaHourRecord(monitor, MonitorType.windDir, start, end)
+    val wind_dirs = List.empty[Record.EpaHourRecord]
     val windRecords = wind_dirs.zip(mt_values)
 
     val step = 360f / nDiv
@@ -44,9 +40,9 @@ object Record {
 
     var total = 0
     for (w <- windRecords) {
-      if (w._1.time == w._2.time) {
-        val dir = (Math.ceil((w._1.value - (step/2)) / step).toInt)% nDiv
-        windMap(dir) += w._2.value
+      if (w._1.time == w._2.time && w._1.value.isDefined && w._2.value.isDefined) {
+        val dir = (Math.ceil((w._1.value.get - (step/2)) / step).toInt)% nDiv
+        windMap(dir) += w._2.value.get
         total += 1
       }
     }

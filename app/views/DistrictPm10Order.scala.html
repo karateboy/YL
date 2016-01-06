@@ -1,11 +1,10 @@
 @* trendReport Template File *@
-@(monitorType:MonitorType.Value)
 <header id="page-title">
 	<div class="container">
-		<h1>@MonitorType.map(monitorType).desp 不良日統計</h1>
+		<h1>行政轄區懸浮微粒PM10排序</h1>
 		<ul class="breadcrumb">
 			<li><a href="/">首頁</a></li>
-			<li class="active">@MonitorType.map(monitorType).desp 不良日統計</li>
+			<li class="active">行政轄區懸浮微粒PM10排序</li>
 		</ul>
 	</div>
 </header>
@@ -17,22 +16,6 @@
                 </div>
             	<div class="panel-body panel-collapse in" id="reportParam">
             		<form class="form-horizontal">
-	                    <div class="form-group">
-	            			<label class="col-lg-1 control-label">環保署測站</label>
-	            			<div class="col-lg-11">
-	            				<div class="btn-group" data-toggle="buttons">	            					            				
-	            					@for(m<-EpaMonitor.values.toList.sorted){
-	            						@if(m == EpaMonitor.values.toList.sorted.head){
-	            							<label class="btn btn-primary active">
-											<input type="checkbox" name="epaMonitor" id="@m" checked>@EpaMonitor.map(m).name</label>
-	            						}else{
-	            							<label class="btn btn-primary">
-											<input type="checkbox" name="epaMonitor" id="@m">@EpaMonitor.map(m).name</label>
-										}		            						
-	            					}
-	            				</div>
-	            			</div>	            			            		
-	                    </div>
 	                    <div class="form-group">
 	            			<label class="col-lg-1 control-label">查詢區間</label>	
 	            			<div class="col-lg-5">
@@ -61,9 +44,6 @@
 	</div>
 </div>
 <script>
-	var monitorType='@monitorType';
-</script>
-<script>
 $( document ).ready(function() {
 	$('#reportStart').datetimepicker({
 		format: 'YYYY-M-D',
@@ -83,15 +63,9 @@ $( document ).ready(function() {
         $('#reportStart').data("DateTimePicker").maxDate(e.date);
     });
 	
-	var epaMonitors, reportStart, reportEnd;
+	var reportStart, reportEnd;
 	
 	function validate(){
-		epaMonitors = $("input[name='epaMonitor']:checked");
-		if(epaMonitors.length == 0){
-			alert("請選擇環保署測站");
-			return false;
-		}
-		
 		reportStart = $('#reportStart').val();
 		if(reportStart.length === 0){
 			alert('請選擇開始日期');
@@ -113,21 +87,8 @@ $( document ).ready(function() {
 			
 		$('#reportDiv').html('');
 		$("body").css("cursor", "progress");
-
-		var epaMonitorParam='';
-		if (epaMonitors.length == 0) {
-			epaMonitorParam = 'None'
-		}else{
-			for (var i = 0; i < epaMonitors.length; i++) {
-				if(epaMonitorParam=='')
-					epaMonitorParam = epaMonitors[i].id;
-				else
-					epaMonitorParam += ':' + epaMonitors[i].id;
-			}	
-		}
 		
-		var base_url = 	epaMonitorParam + "/" + monitorType + "/"+reportStart + "/" + reportEnd;
-		var url = "/OverLawReport/" + base_url; 
+		var url = "/DistrictPm10OrderReport/" + reportStart + "/" + reportEnd;
 		
 		$.ajax({
 			url : url,
