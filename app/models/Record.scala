@@ -24,6 +24,21 @@ object Record {
       }.list().apply()
   }
   
+  def getEpaHourRecordOver(epaMonitor: EpaMonitor.Value, monitorType: MonitorType.Value, startTime: DateTime, endTime: DateTime, threshold:Float)(implicit session: DBSession = AutoSession) = {
+    val start: Timestamp = startTime
+    val end: Timestamp = endTime
+    val monitorId = EpaMonitor.map(epaMonitor).id
+    val monitorTypeStr = MonitorType.map(monitorType).itemId
+      sql"""
+        Select * 
+        From hour_data
+        Where MStation=${monitorId} and MItem=${monitorTypeStr} and MDate >= ${start} and MDate < ${end} and [MValue] > ${threshold}
+        ORDER BY MDate ASC
+      """.map {
+        rs => EpaHourRecord(EpaMonitor.idMap(rs.int(2)), rs.timestamp(3), MonitorType.epaMap(rs.string(4)), rs.floatOpt(5))
+      }.list().apply()
+  }
+  
   def getMtRose(monitor: EpaMonitor.Value, monitorType:MonitorType.Value, start: DateTime, end: DateTime, level:List[Float], nDiv: Int = 16) = {
     val mt_values = getEpaHourRecord(monitor, monitorType, start, end)
     //val wind_dirs = getEpaHourRecord(monitor, MonitorType.windDir, start, end)

@@ -256,12 +256,9 @@ object Query extends Controller {
         } else if (reportUnit == ReportUnit.Day) {
           (DateTime.parse(startStr, DateTimeFormat.forPattern("YYYY-MM-dd")),
             DateTime.parse(endStr, DateTimeFormat.forPattern("YYYY-MM-dd")))
-        } else if (reportUnit == ReportUnit.Month || reportUnit == ReportUnit.Quarter) {
+        } else {
           (DateTime.parse(startStr, DateTimeFormat.forPattern("YYYY-M")),
             DateTime.parse(endStr, DateTimeFormat.forPattern("YYYY-M")))
-        } else {
-          (DateTime.parse(startStr, DateTimeFormat.forPattern("YYYY")),
-            DateTime.parse(endStr, DateTimeFormat.forPattern("YYYY")))
         }
 
       val outputType = OutputType.withName(outputTypeStr)
