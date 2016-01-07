@@ -18,19 +18,19 @@ object EpaDataImporter {
 }
 
 object ImportYesterday
-case class FinishImport(offset: Int, count: Int, total: Int)
+case class FinishImport(offset: Int, count: Int, total: Int, date:DateTime)
 
 class EpaDataImporter extends Actor {
   var errorCount = 0
   def receive = {
     case ImportYesterday =>
-      importEpaDataTask(29000, 1000, self)
+      importEpaDataTask(0, 1000, DateTime.yesterday().toLocalDate().toDateTimeAtStartOfDay(), self)
 
-    case FinishImport(offset, count, total) =>
+    case FinishImport(offset, count, total, date) =>
       if (total == count) {
         //more to import
         Logger.debug(s"offset=$offset total=$total count=$count.")
-        importEpaDataTask(offset + count, count, self)
+        importEpaDataTask(offset + count, count, date, self)
       } else {
         Logger.debug(s"total=$total count=$count. Consider import done")
 
@@ -39,15 +39,16 @@ class EpaDataImporter extends Actor {
       }
   }
 
-  def importEpaDataTask(offset: Int, count: Int, importer: ActorRef) {
+  def importEpaDataTask(offset:Int, count:Int, date:DateTime, importer: ActorRef) {
+    Logger.debug(s"Import EPA data later than $date")
     val result = EpaHourData.getEpaData(offset, count).map { hrDataSeq =>
       import scala.collection.mutable.ListBuffer
       
-      val nData = hrDataSeq.length
-      Logger.debug("recv #="+nData)
+      val newData = hrDataSeq.filter { _.MonitorDate.toDateTime >=date }
+      
       val seqData = ListBuffer.empty[Seq[Any]]
 
-      for (hr <- hrDataSeq) {
+      for (hr <- newData) {
         def appendHr(hrData: Option[String], offset: Int) {
           import scala.collection.mutable.ArrayBuffer
           val params = ArrayBuffer.empty[Any]
@@ -114,8 +115,7 @@ class EpaDataImporter extends Actor {
         appendHr(hr.MonitorValue23, 23)
       }
 
-      Logger.debug("data ready #=" + seqData.length)
-      DB localTx { implicit session =>
+      DB autoCommit { implicit session =>
         sql"""
         INSERT INTO [dbo].[hour_data]
         ([MStation]
@@ -129,17 +129,17 @@ class EpaDataImporter extends Actor {
           .apply()
       }
       errorCount=0
-      importer ! FinishImport(offset, count, nData)
+      importer ! FinishImport(offset, count, newData.length, date)
     }
 
     def retryImport={
         errorCount += 1
         if (errorCount <= 10) {
           Logger.debug(s"try again errorCount=$errorCount")
-          importEpaDataTask(offset, count, importer)
+          importEpaDataTask(offset, count, date, importer)
         } else {
           Logger.debug("give up import task.")
-          importer ! FinishImport(offset, count, 0)
+          importer ! FinishImport(offset, count, 0, date)
         }
     }
     
@@ -152,8 +152,8 @@ class EpaDataImporter extends Actor {
         retryImport
       case ex: java.sql.BatchUpdateException=>
         Logger.error(ex.toString())
-        Logger.info("Take it as success...")
-        importer ! FinishImport(offset, count, count)
+        Logger.info("Hit overlap. Take it as success...")
+        importer ! FinishImport(offset, count, 0, date)
       case ex: Exception=>
         Logger.error(ex.toString())
         retryImport

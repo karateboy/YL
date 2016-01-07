@@ -78,8 +78,14 @@ object Application extends Controller {
     Ok(views.html.siteInfo())
   }
   
-  def testJson4s = Security.Authenticated{
+  def importEpa = Security.Authenticated{
     EpaDataImporter.importYesterday
     Ok("")
+  }
+  
+  def importEpa103 = Action{
+    val path = current.path.getAbsolutePath + "/importEPA/"
+    Epa103Importer.importData(path)
+    Ok("Importing")
   }
 }

@@ -33,4 +33,5 @@ GET		/DistrictPsiOrder		controllers.Query.districtPsiOrder
 GET		/DistrictPm10Order		controllers.Query.districtPm10Order
 GET		/SiteInfo				controllers.Application.siteInfo
 
-GET		/testJson4s				controllers.Application.testJson4s
+GET		/importEpa				controllers.Application.importEpa
+GET		/importEpa103			controllers.Application.importEpa103

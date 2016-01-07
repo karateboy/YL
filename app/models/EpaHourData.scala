@@ -42,8 +42,8 @@ object EpaHourData {
   }
 
   def getEpaData(offset: Int, count: Int) = {
-    val url = s"http://opendata.epa.gov.tw/ws/Data/AQXHour/?$$skip=$offset&$$top=$count&format=json"
-    //val url = s"http://opendata.epa.gov.tw/ws/Data/AQXHour/?$$skip=$offset&format=json"
+    //val url = s"http://opendata.epa.gov.tw/ws/Data/AQXHour/?$$skip=$offset&$$top=$count&format=json"
+    val url = s"http://opendata.epa.gov.tw/ws/Data/AQXHour/?$$skip=$offset&format=json"
     Logger.debug(url)
     WS.url(url).get().map {
       response =>
