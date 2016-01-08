@@ -7,13 +7,13 @@ import models.ModelHelper._
 import java.sql.Timestamp
 import models._
 
-case class PsiRecord(m:EpaMonitor.Value, date:DateTime, value:Float)
+case class PsiRecord(m: EpaMonitor.Value, date: DateTime, value: Float)
 object Psi {
-  def getPsiDayRecord(m:EpaMonitor.Value, start:DateTime, end:DateTime)={
-    val startT:Timestamp = start
-    val endT:Timestamp = end
-    DB readOnly{
-      implicit session=>
+  def getPsiDayRecord(m: EpaMonitor.Value, start: DateTime, end: DateTime) = {
+    val startT: Timestamp = start
+    val endT: Timestamp = end
+    DB readOnly {
+      implicit session =>
         sql"""
           SELECT *
           FROM [YLDB].[dbo].[PsiDay]
@@ -21,12 +21,12 @@ object Psi {
           """.map { r => PsiRecord(EpaMonitor.idMap(r.int(1)), r.timestamp(2), r.float(3)) }.list.apply
     }
   }
-  
-  def getPsiHourRecord(m:EpaMonitor.Value, start:DateTime, end:DateTime)={
-    val startT:Timestamp = start
-    val endT:Timestamp = end
-    DB readOnly{
-      implicit session=>
+
+  def getPsiHourRecord(m: EpaMonitor.Value, start: DateTime, end: DateTime) = {
+    val startT: Timestamp = start
+    val endT: Timestamp = end
+    DB readOnly {
+      implicit session =>
         sql"""
           SELECT *
           FROM [YLDB].[dbo].[PsiHour]
@@ -51,7 +51,7 @@ object Psi {
           """.update.apply
     }
   }
-  
+
   def insertPsiHourRecord(pr: PsiRecord) = {
     val date: Timestamp = pr.date
     DB localTx {
@@ -68,7 +68,7 @@ object Psi {
           """.update.apply
     }
   }
-  
+
   import Record._
   def getMonitorTypeAvg(monitor: EpaMonitor.Value, monitorType: MonitorType.Value, start: DateTime, end: DateTime)(implicit session: DBSession = AutoSession) = {
     val records = getEpaHourRecord(monitor, monitorType, start, end)
@@ -84,7 +84,6 @@ object Psi {
       Some(sum / total)
     }
   }
-
 
   def getMonitorTypeAvg(records: List[EpaHourRecord], monitorType: MonitorType.Value) = {
     val typeValues = records.map { _.value }
@@ -110,17 +109,16 @@ object Psi {
 
   def getMonitorType8HourAvgMax(monitor: EpaMonitor.Value, monitorType: MonitorType.Value, start: DateTime, end: DateTime)(implicit session: DBSession = AutoSession) = {
     def EightHourAvg(start: DateTime): List[Option[Float]] = {
-      if (start + 8.hour>= end)
+      if (start + 8.hour >= end)
         Nil
       else
         getMonitorTypeAvg(monitor, monitorType, start, end) :: EightHourAvg(start + 1.hours)
     }
 
     val avgs = EightHourAvg(start)
-    
+
     avgs.max
   }
-  
 
   def pm10PSI(ov: Option[Float]) = {
     if (ov.isEmpty)
@@ -231,15 +229,15 @@ object Psi {
         }
       }
   }
-  
-  def getRealtimePSI(monitor: EpaMonitor.Value, current:DateTime)(implicit session: DBSession = AutoSession) = {
+
+  def getRealtimePSI(monitor: EpaMonitor.Value, current: DateTime)(implicit session: DBSession = AutoSession) = {
     val pm10_12 = getMonitorTypeAvg(monitor, MonitorType.withName("PM10"), current - 11.hour, current + 1.hour)
     val pm10_4 = getMonitorTypeAvg(monitor, MonitorType.withName("PM10"), current - 3.hour, current + 1.hour)
-    val pm10 = if(pm10_12.isDefined && pm10_4.isDefined)
-          Some((pm10_12.get + pm10_4.get) / 2)
-        else
-          None
-          
+    val pm10 = if (pm10_12.isDefined && pm10_4.isDefined)
+      Some((pm10_12.get + pm10_4.get) / 2)
+    else
+      None
+
     val so2_24 = getMonitorTypeAvg(monitor, MonitorType.withName("SO2"), current - 23.hour, current + 1.hour)
     val co_8 = getMonitorTypeAvg(monitor, MonitorType.withName("CO"), current - 7.hour, current + 1.hour)
     val o3 = getMonitorTypeAvg(monitor, MonitorType.withName("O3"), current, current + 1.hour)
@@ -252,35 +250,35 @@ object Psi {
       MonitorType.withName("NO2") -> (no2, no2PSI(no2)))
     val sub_psi = result.values.map(_._2)
     val psi = sub_psi.toList.max
-    
-    (psi, result)
+
+    PsiReport(psi, result)
   }
-  
-  case class PsiReport(psi:Option[Float], sub_map:Map[MonitorType.Value, (Option[Float], Option[Float])])
-  
-  def getMonthlyPSI(monitor: EpaMonitor.Value, start:DateTime)={
+
+  case class PsiReport(psi: Option[Float], sub_map: Map[MonitorType.Value, (Option[Float], Option[Float])])
+
+  def getMonthlyPSI(monitor: EpaMonitor.Value, start: DateTime) = {
     val end = start + 1.month
-    
-    def helper(day:DateTime):List[PsiReport]={
-      if(day >= end)
+
+    def helper(day: DateTime): List[PsiReport] = {
+      if (day >= end)
         Nil
       else
-        getDailyPSI(monitor, day)::helper(day + 1.day)
+        getDailyPSI(monitor, day) :: helper(day + 1.day)
     }
-    
+
     helper(start)
   }
-  
-  def getDailyPSI(m: EpaMonitor.Value, current:DateTime)(implicit session: DBSession = AutoSession) = {
+
+  def getDailyPSI(m: EpaMonitor.Value, current: DateTime)(implicit session: DBSession = AutoSession) = {
     val start = current
     val end = current + 1.day
 
-    val pm10_24 = getMonitorTypeAvg(m, MonitorType.withName("PM10"), start, end)          
+    val pm10_24 = getMonitorTypeAvg(m, MonitorType.withName("PM10"), start, end)
     val so2_24 = getMonitorTypeAvg(m, MonitorType.withName("SO2"), start, end)
     val o3 = getMonitorTypeMax(m, MonitorType.withName("O3"), start, end)
     val no2 = getMonitorTypeMax(m, MonitorType.withName("NO2"), start, end)
-    
-    val co_8 = getMonitorType8HourAvgMax(m, MonitorType.withName("CO"), current, current+1.day)
+
+    val co_8 = getMonitorType8HourAvgMax(m, MonitorType.withName("CO"), current, current + 1.day)
     val result = Map[MonitorType.Value, (Option[Float], Option[Float])](
       MonitorType.withName("PM10") -> (pm10_24, pm10PSI(pm10_24)),
       MonitorType.withName("SO2") -> (so2_24, so2PSI(so2_24)),
@@ -289,17 +287,17 @@ object Psi {
       MonitorType.withName("NO2") -> (no2, no2PSI(no2)))
     val sub_psi = result.values.map(_._2)
     val psi = sub_psi.toList.max
-    
+
     PsiReport(psi, result)
   }
-  
+
   import controllers.Query._
-  def updateRealtimePsi(m:EpaMonitor.Value, start:DateTime, end:DateTime)={
+  def updateRealtimePsi(m: EpaMonitor.Value, start: DateTime, end: DateTime) = {
     val psiList =
       for (t <- getPeriods(start, end, 1.hour)) yield {
         Logger.info(s"計算 ${EpaMonitor.map(m).name} ${t.toString("YYYY-MM-dd")} 即時PSI")
         val ts: java.sql.Timestamp = t
-        Seq(EpaMonitor.map(m).id, ts, getDailyPSI(m, t).psi)
+        Seq(EpaMonitor.map(m).id, ts, getRealtimePSI(m, t).psi)
       }
 
     DB autoCommit { implicit session =>
