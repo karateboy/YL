@@ -1,10 +1,10 @@
 @* trendReport Template File *@
 <header id="page-title">
 	<div class="container">
-		<h1>行政轄區懸浮微粒PM10排序</h1>
+		<h1>行政轄區測項排序</h1>
 		<ul class="breadcrumb">
 			<li><a href="/">首頁</a></li>
-			<li class="active">行政轄區懸浮微粒PM10排序</li>
+			<li class="active">行政轄區測項排序</li>
 		</ul>
 	</div>
 </header>
@@ -16,6 +16,23 @@
                 </div>
             	<div class="panel-body panel-collapse in" id="reportParam">
             		<form class="form-horizontal">
+            			<div class="form-group">
+	            			<label class="col-lg-1 control-label">測項</label>
+	            			<div class="col-lg-11">
+	            				<div class="btn-group" data-toggle="buttons">	            				
+	            				@for(mt<-MonitorType.values){
+	            					@if(mt == MonitorType.values.head){
+	            						<label class="btn btn-outline btn-primary dim active">
+										<input type="radio" name="monitorType" id="@mt" checked>@MonitorType.map(mt).desp</label>	
+	            					}else{
+	            						<label class="btn btn-outline btn-primary dim">
+										<input type="radio" name="monitorType" id="@mt">@MonitorType.map(mt).desp</label>
+	            					}	            					
+	            				}
+	            				</div>
+	            			</div>	            			            		
+	                    </div>
+            		
 	                    <div class="form-group">
 	            			<label class="col-lg-1 control-label">查詢區間</label>	
 	            			<div class="col-lg-5">
@@ -63,9 +80,15 @@ $( document ).ready(function() {
         $('#reportStart').data("DateTimePicker").maxDate(e.date);
     });
 	
-	var reportStart, reportEnd;
+	var monitorTypes, reportStart, reportEnd;
 	
 	function validate(){
+		monitorTypes = $("input[name='monitorType']:checked");
+		if(monitorTypes.length == 0) {
+			alert('請選擇測項');
+			return false;
+		}
+
 		reportStart = $('#reportStart').val();
 		if(reportStart.length === 0){
 			alert('請選擇開始日期');
@@ -87,8 +110,16 @@ $( document ).ready(function() {
 			
 		$('#reportDiv').html('');
 		$("body").css("cursor", "progress");
+
+		var monitorTypeParam='';
+		for (var i = 0; i < monitorTypes.length; i++) {
+			if(monitorTypeParam=='')
+				monitorTypeParam = monitorTypes[i].id;
+			else
+				monitorTypeParam += ':' + monitorTypes[i].id;
+		}	
 		
-		var url = "/DistrictPm10OrderReport/" + reportStart + "/" + reportEnd;
+		var url = "/DistrictOrderReport/" + monitorTypeParam + "/" + reportStart + "/" + reportEnd;
 		
 		$.ajax({
 			url : url,

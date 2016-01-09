@@ -32,8 +32,8 @@ class PsiUpdater extends Actor{
     val start = DateTime.parse(s"$year-1-1")
     val end = DateTime.parse(s"${year+1}-1-1")
     for(m <- EpaMonitor.mvList){
-      Psi.updateDayPsi(m, start, end)
-      Psi.updateRealtimePsi(m, start, end)
+      //Psi.updateDayPsi(m, start, end)
+      //Psi.updateRealtimePsi(m, start, end)
     }
     
   }

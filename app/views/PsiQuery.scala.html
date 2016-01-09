@@ -17,12 +17,17 @@
             	<div class="panel-body panel-collapse in" id="reportParam">
             		<form class="form-horizontal">
 	                    <div class="form-group">
-	            			<label class="col-lg-1 control-label">雲林測站</label>
+	            			<label class="col-lg-1 control-label">測站</label>
 	            			<div class="col-lg-11">
 	            				<div class="btn-group" data-toggle="buttons">	            					            				
-	            					@for(m<-EpaMonitor.YunlinMonitorList.sorted){
-	            						<label class="btn btn-primary active">
-										<input type="checkbox" name="epaMonitor" id="@m" checked>@EpaMonitor.map(m).name</label>
+	            					@for(m<-EpaMonitor.normalMonitor){	            							            						 
+	            						@if(EpaMonitor.YunlinMonitorList.contains(m)){ 
+	            							<label class="btn btn-primary active">
+	            							<input type="checkbox" name="epaMonitor" id="@m" checked>@EpaMonitor.map(m).name</label>
+	            						}else{
+											<label class="btn btn-primary">
+	            							<input type="checkbox" name="epaMonitor" id="@m">@EpaMonitor.map(m).name</label>
+	            						}
 	            					}
 	            				</div>
 	            			</div>	            			            		

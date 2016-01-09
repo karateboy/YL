@@ -53,26 +53,32 @@ object Query extends Controller {
   }
 
   def getPeriodReportMap(monitor: EpaMonitor.Value, mt: MonitorType.Value, period: Period)(start: DateTime, end: DateTime) = {
-    val periods = getPeriods(start, end, period)
     val epaRecordList = Record.getEpaHourRecord(monitor, mt, start, end)
+    def periodSlice(period_start: DateTime, period_end: DateTime) = {
+      epaRecordList.dropWhile { _.time >= period_start }.takeWhile { _.time < period_end }
+    }
     val pairs =
-      for {
-        period_start <- periods
-        epaRecord = epaRecordList.filter { r => r.time >= period_start && r.time < period_start + period }
-        values = epaRecord.filter { r => r.value.isDefined }.map { r => r.value.get } if values.length > 0
-      } yield {
-        if (mt == MonitorType.withName("WD_HR")) {
-          val windDir = values
-          val windSpeed = Record.getEpaHourRecord(monitor, MonitorType.withName("WS_HR"), period_start, period_start + period).filter { r => r.value.isDefined }.map { r => r.value.get }
-          period_start -> windAvgF(windSpeed, windDir)
-        } else
-          period_start -> values.sum / values.length
+      if (period.getHours ==1) {
+        epaRecordList.filter(_.value.isDefined).map { r => r.time -> r.value.get }
+      } else {
+        for {
+          period_start <- getPeriods(start, end, period)
+          epaRecord = periodSlice(period_start, period_start + period)
+          values = epaRecord.filter { r => r.value.isDefined }.map { r => r.value.get } if values.length > 0
+        } yield {
+          if (mt == MonitorType.withName("WD_HR")) {
+            val windDir = values
+            val windSpeed = Record.getEpaHourRecord(monitor, MonitorType.withName("WS_HR"), period_start, period_start + period).filter { r => r.value.isDefined }.map { r => r.value.get }
+            period_start -> windAvgF(windSpeed, windDir)
+          } else
+            period_start -> values.sum / values.length
 
+        }
       }
 
     Map(pairs: _*)
   }
-        
+
   def trendHelper(epaMonitors: Array[EpaMonitor.Value],
                   monitorTypes: Array[MonitorType.Value], reportUnit: ReportUnit.Value, start: DateTime, end: DateTime) = {
 
@@ -95,7 +101,6 @@ object Query extends Controller {
     val timeSeq = timeSet.toList.sorted.zipWithIndex
 
     def epaSeries() = {
-
 
       val epaMonitorPairs =
         for {
@@ -427,7 +432,7 @@ object Query extends Controller {
                         startStr: String, endStr: String) = Security.Authenticated {
     implicit request =>
       import scala.collection.JavaConverters._
-      val epaMonitors = epaMonitorStr.split(':').map { EpaMonitor.withName }
+      val epaMonitors = epaMonitorStr.split(':').map { EpaMonitor.withName }.toList
       val filterType = Pm25FilterType.withName(filterTypeStr)
       val (start, end) =
         (DateTime.parse(startStr, DateTimeFormat.forPattern("YYYY-MM-dd")),
@@ -435,24 +440,28 @@ object Query extends Controller {
 
       val mt = MonitorType.withName("PM2.5")
       val period: Period =
-        if(filterType == Pm25FilterType.Hour)
+        if (filterType == Pm25FilterType.Hour)
           1.hour
         else
           1.day
-          
-       val overLawRecords =
-        for {
-          m <- epaMonitors
-          recordMap = getPeriodReportMap(m, mt, period)(start, end)
-        } yield {
-          if(filterType == Pm25FilterType.Hour){
-            (m, recordMap.values.toList.filter { _ > 65 }.length)
-          }else{
+
+      val overLawRecords =
+        if (filterType == Pm25FilterType.Hour) {
+          for {
+            m <- epaMonitors
+            overLaw = Record.getEpaHourRecordOverCount(m, mt, start, end, 65)
+          } yield (m, overLaw.get)
+        } else {
+          for {
+            m <- epaMonitors
+            recordMap = getPeriodReportMap(m, mt, period)(start, end)
+          } yield {
             (m, recordMap.values.toList.filter { _ > 35 }.length)
           }
         }
-
-      Ok(views.html.Pm25OverLawReport(filterType, start, end, overLawRecords))
+      
+      val order = overLawRecords.sortBy(_._2).reverse.zipWithIndex
+      Ok(views.html.Pm25OverLawReport(filterType, start, end, order))
   }
 
   def psiQuery = Security.Authenticated {
@@ -460,7 +469,7 @@ object Query extends Controller {
   }
 
   def psiOverLawReport(epaMonitorStr: String,
-                        startStr: String, endStr: String) = Security.Authenticated {
+                       startStr: String, endStr: String) = Security.Authenticated {
     implicit request =>
       import scala.collection.JavaConverters._
       val epaMonitors = epaMonitorStr.split(':').map { EpaMonitor.withName }
@@ -468,18 +477,18 @@ object Query extends Controller {
         (DateTime.parse(startStr, DateTimeFormat.forPattern("YYYY-MM-dd")),
           DateTime.parse(endStr, DateTimeFormat.forPattern("YYYY-MM-dd")))
 
-          
-       val overLawRecords =
+      val overLawList =
         for {
-          m <- epaMonitors
-          psiDayRecords = Psi.getPsiDayRecord(m, start, end)
+          m <- epaMonitors.toList
         } yield {
-            (m, psiDayRecords.filter { _.value > 100 }.length)
+          val overLaw = Psi.getPsiOverLawCount(m, start, end, 100).get
+          (m, overLaw)
         }
 
-      Ok(views.html.PsiOverLawReport(start, end, overLawRecords))
+      val order = overLawList.sortBy(_._2).reverse.zipWithIndex
+      Ok(views.html.PsiOverLawReport(start, end, order))
   }
-  
+
   def sitePsiOrder = Security.Authenticated {
     Ok(views.html.SitePsiQuery())
   }
@@ -489,22 +498,78 @@ object Query extends Controller {
       (DateTime.parse(startStr, DateTimeFormat.forPattern("YYYY-MM-dd")),
         DateTime.parse(endStr, DateTimeFormat.forPattern("YYYY-MM-dd")))
 
-    val overLawRecords =
+    val overLawList =
       for {
         m <- EpaMonitor.mvList
-        psiDayRecords = Psi.getPsiDayRecord(m, start, end)
+        overLaw = Psi.getPsiOverLawCount(m, start, end, 100).get
       } yield {
-        (m, psiDayRecords.filter { _.value > 100 }.length)
+        (m, overLaw)
       }
 
-    Ok(views.html.PsiOverLawReport(start, end, overLawRecords.toArray))
+    val order = overLawList.sortBy(_._2).reverse.zipWithIndex
+
+    Ok(views.html.PsiOverLawReport(start, end, order))
   }
-  
+
   def districtPsiOrder = Security.Authenticated {
     Ok(views.html.DistrictPsiQuery())
   }
 
-  def districtPm10Order = Security.Authenticated {
-    Ok(views.html.DistrictPm10Order())
+  def districtPsiOrderReport(startStr: String, endStr: String) = Security.Authenticated {
+    implicit request =>
+      import scala.collection.JavaConverters._
+      
+      val (start, end) =
+        (DateTime.parse(startStr, DateTimeFormat.forPattern("YYYY-MM-dd")),
+          DateTime.parse(endStr, DateTimeFormat.forPattern("YYYY-MM-dd")))
+
+      val overLawList =
+        for {
+          d <- District.list
+        } yield {
+          val mList = EpaMonitor.mvList.filter { m => EpaMonitor.map(m).districtID.isDefined && 
+            EpaMonitor.map(m).districtID.get == d.id }
+          
+          assert(mList.length != 0)
+          val overLaw = Psi.getPsiOverLawCount(mList, start, end, 100).get
+                    
+          (District(d.id), overLaw.toFloat/mList.length)
+        }
+
+      val order = overLawList.sortBy(_._2).reverse.zipWithIndex
+      Ok(views.html.DistrictPsiOverLawReport(start, end, order))
   }
+    
+  def districtOrder = Security.Authenticated {
+    Ok(views.html.DistrictOrder())
+  }
+  
+  def districtOrderReport(monitorTypeStr:String, startStr: String, endStr: String) = Security.Authenticated {
+    implicit request =>
+      import scala.collection.JavaConverters._
+      
+      val monitorType = MonitorType.withName(monitorTypeStr)
+      val (start, end) =
+        (DateTime.parse(startStr, DateTimeFormat.forPattern("YYYY-MM-dd")),
+          DateTime.parse(endStr, DateTimeFormat.forPattern("YYYY-MM-dd")))
+
+      val orderList =
+        for {
+          d <- District.list
+        } yield {
+          val mList = EpaMonitor.normalMonitor.filter { EpaMonitor.map(_).districtID == Some(d.id) }
+          assert(mList.length != 0)
+          val avgList = mList.map{Record.getEpaHourRecordAvg(_, monitorType, start, end).get}
+            .filter { _.isDefined }.map{_.get}
+          
+          if(avgList.length != 0)
+            (District(d.id), Some(avgList.sum/avgList.length))
+          else
+            (District(d.id), None)
+        }
+
+      val order = orderList.sortBy(_._2).reverse.zipWithIndex
+      Ok(views.html.orderReport(monitorType, start, end, order))
+  }
+
 }

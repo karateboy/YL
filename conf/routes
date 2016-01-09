@@ -30,10 +30,14 @@ GET		/PsiOverLawReport/:epaMonitor/:start/:end	controllers.Query.psiOverLawRepor
 GET		/SitePsiOrder			controllers.Query.sitePsiOrder
 GET		/SitePsiOrderReport/:start/:end			controllers.Query.sitePsiOrderReport(start, end)
 GET		/DistrictPsiOrder		controllers.Query.districtPsiOrder
-GET		/DistrictPm10Order		controllers.Query.districtPm10Order
+GET		/DistrictPsiOrderReport/:start/:end		controllers.Query.districtPsiOrderReport(start, end)
+GET		/DistrictOrder			controllers.Query.districtOrder
+GET		/DistrictOrderReport/:monitorType/:start/:end	controllers.Query.districtOrderReport(monitorType, start, end)
+
 GET		/SiteInfo				controllers.Application.siteInfo
 
 GET		/importEpa				controllers.Application.importEpa
-GET		/importEpa103			controllers.Application.importEpa103
-GET		/importEpa100			controllers.Application.importEpa100
+GET		/importEpaXLS			controllers.Application.importEpa103
+GET		/importEpaCSV			controllers.Application.importEpa100
+GET		/importPSI				controllers.Application.importPSI
 GET		/updatePSI/:year		controllers.Application.updatePSI(year: Int)

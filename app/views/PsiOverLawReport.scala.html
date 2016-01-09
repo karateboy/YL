@@ -1,7 +1,7 @@
 @* historyReport Template File *@
 @import controllers.Query._
 @import com.github.nscala_time.time.Imports._
-@(start:DateTime, end:DateTime, records:Array[(EpaMonitor.Value, Int)])
+@(start:DateTime, end:DateTime, records: List[((EpaMonitor.Value, Int), Int)])
 
 <H3>PSI超標統計,日PSI>100</H3>
 <H5>區間:@start.toString("YYYY-MM-dd HH:mm")~@end.toString("YYYY-MM-dd HH:mm")</H5>
@@ -9,6 +9,7 @@
 <table id="historyReport" class="table">
 <thead>
 	<tr>
+		<th>排名</th>
 		<th>測站</th>
 		<th>超標日數</th>
 	</tr>
@@ -16,8 +17,9 @@
 <tbody>
 	@for(r <- records){
 		<tr>
-			<td>@EpaMonitor.map(r._1).name</td>
-			<td>@r._2</td>
+			<td>@(r._2+1)</td>
+			<td>@EpaMonitor.map(r._1._1).name</td>
+			<td>@r._1._2</td>
 		</tr>
 		}
 </tbody>

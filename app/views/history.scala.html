@@ -19,11 +19,11 @@
             	<div class="panel-body panel-collapse in" id="reportParam">
             		<form class="form-horizontal">
 	                    <div class="form-group">
-	            			<label class="col-lg-1 control-label">環保署測站</label>
+	            			<label class="col-lg-1 control-label">測站</label>
 	            			<div class="col-lg-11">
 	            				<div class="btn-group" data-toggle="buttons">	            					            				
-	            					@for(m<-EpaMonitor.values.toList.sorted){
-	            						@if(m == EpaMonitor.values.toList.sorted.head){
+	            					@for(m<-EpaMonitor.normalMonitor){
+	            						@if(m == EpaMonitor.normalMonitor.head){
 	            							<label class="btn btn-primary active">
 											<input type="checkbox" name="epaMonitor" id="@m" checked>@EpaMonitor.map(m).name</label>
 	            						}else{

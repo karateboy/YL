@@ -7,9 +7,9 @@
 <!--[if gt IE 9]><!-->	<html> <!--<![endif]-->
 	<head>
 		<meta charset="utf-8" />
-		<title>雲林縣環境保護局空氣品質管理系統</title>
+		<title>空氣品質資訊系統</title>
 		<meta name="keywords" content="HTML5,CSS3,Template" />
-		<meta name="description" content="雲林縣環境保護局空氣品質管理系統" />
+		<meta name="description" content="空氣品質資訊系統" />
 		<meta name="Author" content="Aragorn Huang" />
 
 		<!-- mobile settings -->
@@ -148,8 +148,9 @@
 				</button>
 
 				<!-- Logo text or image -->
-				<a class="logo" href="/">
-					<img src="assets/images/logo.png" alt="Atropos" />
+				<a class="logo" href="/">空氣品質資訊系統
+					<!-- <img src="assets/images/logo.png" alt="Atropos" />
+					 -->
 				</a>
 
 				<!-- Top Nav -->
@@ -203,7 +204,7 @@
 										<a href="#" onclick="loadPage('/DistrictPsiOrder','行政轄區PSI>100日數排序');" ><i class="fa fa-star-o"></i>行政轄區PSI>100日數排序</a>										
 									</li>
 									<li>
-										<a href="#" onclick="loadPage('/DistrictPm10Order','行政轄區懸浮微粒PM10排序');" ><i class="fa fa-star-o"></i>行政轄區懸浮微粒PM10排序</a>										
+										<a href="#" onclick="loadPage('/DistrictOrder','行政轄區測項排序');" ><i class="fa fa-star-o"></i>行政轄區測項排序</a>										
 									</li>																		
 								</ul>
 							</li>
@@ -212,7 +213,11 @@
 									<i class="fa fa-info-circle">測站資訊</i>
 								</a>
 							</li>
-
+							<li class="dropdown">
+								<a class="dropdown-toggle" href="/logout">
+									<i class="fa fa-sign-out">登出</i>
+								</a>
+							</li>
 							<!-- GLOBAL SEARCH -->
 							<li class="search">
 								<!-- search form -->

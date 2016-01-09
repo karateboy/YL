@@ -39,6 +39,34 @@ object Record {
       }.list().apply()
   }
   
+  def getEpaHourRecordOverCount(epaMonitor: EpaMonitor.Value, monitorType: MonitorType.Value, startTime: DateTime, endTime: DateTime, threshold:Float)(implicit session: DBSession = AutoSession) = {
+    val start: Timestamp = startTime
+    val end: Timestamp = endTime
+    val monitorId = EpaMonitor.map(epaMonitor).id
+    val monitorTypeStr = MonitorType.map(monitorType).itemId
+      sql"""
+        Select count(*) 
+        From hour_data
+        Where MStation=${monitorId} and MItem=${monitorTypeStr} and MDate >= ${start} and MDate < ${end} and [MValue] > ${threshold}
+      """.map {
+        rs => rs.int(1)
+      }.single.apply
+  }
+  
+  def getEpaHourRecordAvg(epaMonitor: EpaMonitor.Value, monitorType: MonitorType.Value, startTime: DateTime, endTime: DateTime)(implicit session: DBSession = AutoSession) = {
+    val start: Timestamp = startTime
+    val end: Timestamp = endTime
+    val monitorId = EpaMonitor.map(epaMonitor).id
+    val monitorTypeStr = MonitorType.map(monitorType).itemId
+      sql"""
+        Select AVG(MValue) 
+        From hour_data
+        Where MStation=${monitorId} and MItem=${monitorTypeStr} and MDate >= ${start} and MDate < ${end}
+      """.map {
+        rs => rs.floatOpt(1)
+      }.single.apply
+  }
+    
   def getMtRose(monitor: EpaMonitor.Value, monitorType:MonitorType.Value, start: DateTime, end: DateTime, level:List[Float], nDiv: Int = 16) = {
     val mt_values = getEpaHourRecord(monitor, monitorType, start, end)
     //val wind_dirs = getEpaHourRecord(monitor, MonitorType.windDir, start, end)

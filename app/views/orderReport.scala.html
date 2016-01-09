@@ -1,27 +1,29 @@
-@* historyReport Template File *@
-@import controllers.Query._
+@* orderReport Template File *@
 @import com.github.nscala_time.time.Imports._
-@(filterType:Pm25FilterType.Value, start:DateTime, end:DateTime, records:List[((EpaMonitor.Value, Int), Int)])
-
-<H3>PM2.5超標統計,
-@if(filterType == Pm25FilterType.Hour){小時濃度>65}else{日平均>35}
-</H3>
+@(mt:MonitorType.Value,start:DateTime, end:DateTime, records: List[((District.Value, Option[Float]), Int)])
+<H3>行政轄區@{MonitorType.map(mt).desp}排序:</H3>
 <H5>區間:@start.toString("YYYY-MM-dd HH:mm")~@end.toString("YYYY-MM-dd HH:mm")</H5>
 
 <table id="historyReport" class="table">
 <thead>
 	<tr>
 		<th>排名</th>
+		<th>行政區域</th>
 		<th>測站</th>
-		<th>@if(filterType == Pm25FilterType.Hour){超標小時數}else{超標日數}</th>
+		<th>平均值</th>
 	</tr>
 </thead>
 <tbody>
 	@for(r <- records){
 		<tr>
 			<td>@(r._2+1)</td>
-			<td>@EpaMonitor.map(r._1._1).name</td>
-			<td>@r._1._2</td>
+			<td>@District.map(r._1._1).name</td>
+			<td>@District.getNormalEpaMonitorNameStr(r._1._1)</td>
+			@if(r._1._2.isDefined){			
+				<td>@{"%.1f".format(r._1._2.get)}</td>
+			}else{
+				<td>-</td>
+			}
 		</tr>
 		}
 </tbody>
@@ -36,8 +38,7 @@ $(document ).ready(function() {
 		language: {
 			url: local_url,							
 		},
-		"paging":   false,
-		searching: false
+		paging:   false
 	} );
 });
 </script>

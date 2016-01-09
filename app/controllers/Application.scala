@@ -83,14 +83,14 @@ object Application extends Controller {
     Ok("")
   }
   
-  def importEpa103 = Action{
-    val path = current.path.getAbsolutePath + "/importEPA/"
+  val path = current.path.getAbsolutePath + "/importEPA/"
+  
+  def importEpa103 = Action{    
     Epa103Importer.importData(path)
     Ok(s"匯入 $path")
   }
   
   def importEpa100 = Action{
-    val path = current.path.getAbsolutePath + "/importEPA/"
     Epa100Importer.importData(path)
     Ok(s"匯入 $path")    
   }
@@ -98,5 +98,10 @@ object Application extends Controller {
   def updatePSI(year:Int) = Action{
     PsiUpdater.start(year)
     Ok(s"$year 年PSI計算中...")
+  }
+  
+  def importPSI = Action{
+    PsiImporter.importData(path)
+    Ok(s"匯入PSI...")    
   }
 }
