@@ -36,6 +36,29 @@ object ExcelUtility {
     new File(reportFilePath.toAbsolutePath().toString())
   }
   
+  def createStyle(mt: MonitorType.Value)(implicit wb: XSSFWorkbook) = {
+    val prec = MonitorType.map(mt).prec
+    val format_str = "0." + "0" * prec
+    val style = wb.createCellStyle();
+    val format = wb.createDataFormat();
+        // Create a new font and alter it.
+    val font = wb.createFont();
+    font.setFontHeightInPoints(10);
+    font.setFontName("標楷體");
+
+    style.setFont(font)
+    style.setDataFormat(format.getFormat(format_str))
+    style.setBorderBottom(CellStyle.BORDER_THIN);
+    style.setBottomBorderColor(IndexedColors.BLACK.getIndex());
+    style.setBorderLeft(CellStyle.BORDER_THIN);
+    style.setLeftBorderColor(IndexedColors.BLACK.getIndex());
+    style.setBorderRight(CellStyle.BORDER_THIN);
+    style.setRightBorderColor(IndexedColors.BLACK.getIndex());
+    style.setBorderTop(CellStyle.BORDER_THIN);
+    style.setTopBorderColor(IndexedColors.BLACK.getIndex());
+    style
+  }
+    
   import controllers.Highchart._
   def exportChartData(chart: HighchartData, monitorTypes: Array[MonitorType.Value]): File = {
     val precArray = monitorTypes.map { mt => MonitorType.map(mt).prec }
@@ -124,7 +147,7 @@ object ExcelUtility {
 
   import Query._
   def Pm25OverLawReport(filterType:Pm25FilterType.Value, start:DateTime, end:DateTime, records:List[((EpaMonitor.Value, Int), Int)])={
-    val (reportFilePath, pkg, wb) = prepareTemplate("report.xlsx")
+    implicit val (reportFilePath, pkg, wb) = prepareTemplate("report.xlsx")
     val evaluator = wb.getCreationHelper().createFormulaEvaluator()
     
     val sheet = wb.getSheetAt(0)
@@ -150,9 +173,9 @@ object ExcelUtility {
   }
   
   def PsiOverLawReport(start:DateTime, end:DateTime, records:List[((EpaMonitor.Value, Int), Int)])={
-    val (reportFilePath, pkg, wb) = prepareTemplate("report.xlsx")
+    implicit val (reportFilePath, pkg, wb) = prepareTemplate("report.xlsx")
     val evaluator = wb.getCreationHelper().createFormulaEvaluator()
-    
+    val style = createStyle(MonitorType.withName("SO2"))
     val sheet = wb.getSheetAt(0)
     val headerRow = sheet.getRow(0)
       headerRow.getCell(0).setCellValue("PSI超標統計,日PSI>100")
@@ -171,9 +194,9 @@ object ExcelUtility {
   }
 
   def DistrictPsiOverLawReport(start:DateTime, end:DateTime, records: List[((District.Value, Float), Int)])={
-    val (reportFilePath, pkg, wb) = prepareTemplate("districtReport.xlsx")
+    implicit val (reportFilePath, pkg, wb) = prepareTemplate("districtReport.xlsx")
     val evaluator = wb.getCreationHelper().createFormulaEvaluator()
-    
+    val style = createStyle(MonitorType.withName("SO2"))
     val sheet = wb.getSheetAt(0)
     val headerRow = sheet.getRow(0)
     headerRow.getCell(0).setCellValue("PSI超標統計,日PSI>100")
@@ -183,34 +206,44 @@ object ExcelUtility {
     for(r <- records){      
       val rowN = r._2 + 3
       val row = sheet.createRow(rowN)
-      row.createCell(0).setCellValue(r._2+1)
-      row.createCell(1).setCellValue(District.map(r._1._1).name)
-      row.createCell(2).setCellValue(District.getEpaMonitorNameStr(r._1._1))
-      row.createCell(3).setCellValue(r._1._2)
+      row.createCell(0).setCellStyle(style)
+      row.getCell(0).setCellValue(r._2+1)
+      row.createCell(1).setCellStyle(style)
+      row.getCell(1).setCellValue(District.map(r._1._1).name)
+      row.createCell(2).setCellStyle(style)
+      row.getCell(2).setCellValue(District.getEpaMonitorNameStr(r._1._1))
+      row.createCell(3).setCellStyle(style)
+      row.getCell(3).setCellValue(r._1._2)
     }
     finishExcel(reportFilePath, pkg, wb)
   }
   
   def DistrictOrderReport(mt:MonitorType.Value,start:DateTime, end:DateTime, records: List[((District.Value, Option[Float]), Int)])={
-    val (reportFilePath, pkg, wb) = prepareTemplate("districtReport.xlsx")
+    implicit val (reportFilePath, pkg, wb) = prepareTemplate("districtReport.xlsx")
     val evaluator = wb.getCreationHelper().createFormulaEvaluator()
     
+    val style = createStyle(mt)
     val sheet = wb.getSheetAt(0)
     val headerRow = sheet.getRow(0)
     headerRow.getCell(0).setCellValue(s"行政轄區${MonitorType.map(mt).desp}排序:")
     sheet.getRow(2).getCell(3).setCellValue("平均值")
     sheet.getRow(1).getCell(0).setCellValue(s"區間:${start.toString("YYYY-MM-dd HH:mm")}~${end.toString("YYYY-MM-dd HH:mm")}")
     
+    
     for(r <- records){      
       val rowN = r._2 + 3
       val row = sheet.createRow(rowN)
-      row.createCell(0).setCellValue(r._2+1)
-      row.createCell(1).setCellValue(District.map(r._1._1).name)
-      row.createCell(2).setCellValue(District.getEpaMonitorNameStr(r._1._1))
+      row.createCell(0).setCellStyle(style)
+      row.getCell(0).setCellValue(r._2+1)
+      row.createCell(1).setCellStyle(style)
+      row.getCell(1).setCellValue(District.map(r._1._1).name)
+      row.createCell(2).setCellStyle(style)
+      row.getCell(2).setCellValue(District.getEpaMonitorNameStr(r._1._1))
+      row.createCell(3).setCellStyle(style)
       if(r._1._2.isDefined){			
-				row.createCell(3).setCellValue(r._1._2.get)
+				row.getCell(3).setCellValue(r._1._2.get)
 			}else{
-				row.createCell(3).setCellValue("-")
+				row.getCell(3).setCellValue("-")
 			}      
     }
     finishExcel(reportFilePath, pkg, wb)
