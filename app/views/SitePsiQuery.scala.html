@@ -37,6 +37,9 @@
         	</div>
         	<div class="panel panel-success" id="reportPanel">
             	<div class="panel-body panel-collapse">
+            		<div align="right">            			
+            			<label class="btn btn-outline" data-toggle="tooltip" data-placement="bottom" title="Excel"><a href="#" id="downloadExcel"><i class="fa fa-file-excel-o fa-2x"></i></a></label>            			
+                	</div>
 					<div id="reportDiv" style="width:99%">
             		</div>
             	</div>
@@ -98,6 +101,7 @@ $( document ).ready(function() {
 			dataType : "html",
 			success : function(result) {
 				$("#reportPanel").css('display','block');
+				$("#downloadExcel").prop("href", "/Excel" + url);
 				$('#reportDiv').html(result);				
 						
 			},

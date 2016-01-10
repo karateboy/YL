@@ -121,4 +121,98 @@ object ExcelUtility {
 
     finishExcel(reportFilePath, pkg, wb)
   }
+
+  import Query._
+  def Pm25OverLawReport(filterType:Pm25FilterType.Value, start:DateTime, end:DateTime, records:List[((EpaMonitor.Value, Int), Int)])={
+    val (reportFilePath, pkg, wb) = prepareTemplate("report.xlsx")
+    val evaluator = wb.getCreationHelper().createFormulaEvaluator()
+    
+    val sheet = wb.getSheetAt(0)
+    val headerRow = sheet.getRow(0)
+    if(filterType == Pm25FilterType.Hour){
+      headerRow.getCell(0).setCellValue("PM2.5超標統計,小時濃度>65")
+      sheet.getRow(2).getCell(2).setCellValue("超標小時數")
+    }else{
+      headerRow.getCell(0).setCellValue("PM2.5超標統計,日平均>35")
+      sheet.getRow(2).getCell(2).setCellValue("超標日數")
+    }
+    
+    sheet.getRow(1).getCell(0).setCellValue(s"區間:${start.toString("YYYY-MM-dd HH:mm")}~${end.toString("YYYY-MM-dd HH:mm")}")
+    
+    for(r <- records){      
+      val rowN = r._2 + 3
+      val row = sheet.createRow(rowN)
+      row.createCell(0).setCellValue(r._2+1)
+      row.createCell(1).setCellValue(EpaMonitor.map(r._1._1).name)
+      row.createCell(2).setCellValue(r._1._2)
+    }
+    finishExcel(reportFilePath, pkg, wb)
+  }
+  
+  def PsiOverLawReport(start:DateTime, end:DateTime, records:List[((EpaMonitor.Value, Int), Int)])={
+    val (reportFilePath, pkg, wb) = prepareTemplate("report.xlsx")
+    val evaluator = wb.getCreationHelper().createFormulaEvaluator()
+    
+    val sheet = wb.getSheetAt(0)
+    val headerRow = sheet.getRow(0)
+      headerRow.getCell(0).setCellValue("PSI超標統計,日PSI>100")
+      sheet.getRow(2).getCell(2).setCellValue("超標日數")
+    
+    sheet.getRow(1).getCell(0).setCellValue(s"區間:${start.toString("YYYY-MM-dd HH:mm")}~${end.toString("YYYY-MM-dd HH:mm")}")
+    
+    for(r <- records){      
+      val rowN = r._2 + 3
+      val row = sheet.createRow(rowN)
+      row.createCell(0).setCellValue(r._2+1)
+      row.createCell(1).setCellValue(EpaMonitor.map(r._1._1).name)
+      row.createCell(2).setCellValue(r._1._2)
+    }
+    finishExcel(reportFilePath, pkg, wb)
+  }
+
+  def DistrictPsiOverLawReport(start:DateTime, end:DateTime, records: List[((District.Value, Float), Int)])={
+    val (reportFilePath, pkg, wb) = prepareTemplate("districtReport.xlsx")
+    val evaluator = wb.getCreationHelper().createFormulaEvaluator()
+    
+    val sheet = wb.getSheetAt(0)
+    val headerRow = sheet.getRow(0)
+    headerRow.getCell(0).setCellValue("PSI超標統計,日PSI>100")
+    sheet.getRow(2).getCell(3).setCellValue("平均超標日數")
+    sheet.getRow(1).getCell(0).setCellValue(s"區間:${start.toString("YYYY-MM-dd HH:mm")}~${end.toString("YYYY-MM-dd HH:mm")}")
+    
+    for(r <- records){      
+      val rowN = r._2 + 3
+      val row = sheet.createRow(rowN)
+      row.createCell(0).setCellValue(r._2+1)
+      row.createCell(1).setCellValue(District.map(r._1._1).name)
+      row.createCell(2).setCellValue(District.getEpaMonitorNameStr(r._1._1))
+      row.createCell(3).setCellValue(r._1._2)
+    }
+    finishExcel(reportFilePath, pkg, wb)
+  }
+  
+  def DistrictOrderReport(mt:MonitorType.Value,start:DateTime, end:DateTime, records: List[((District.Value, Option[Float]), Int)])={
+    val (reportFilePath, pkg, wb) = prepareTemplate("districtReport.xlsx")
+    val evaluator = wb.getCreationHelper().createFormulaEvaluator()
+    
+    val sheet = wb.getSheetAt(0)
+    val headerRow = sheet.getRow(0)
+    headerRow.getCell(0).setCellValue(s"行政轄區${MonitorType.map(mt).desp}排序:")
+    sheet.getRow(2).getCell(3).setCellValue("平均值")
+    sheet.getRow(1).getCell(0).setCellValue(s"區間:${start.toString("YYYY-MM-dd HH:mm")}~${end.toString("YYYY-MM-dd HH:mm")}")
+    
+    for(r <- records){      
+      val rowN = r._2 + 3
+      val row = sheet.createRow(rowN)
+      row.createCell(0).setCellValue(r._2+1)
+      row.createCell(1).setCellValue(District.map(r._1._1).name)
+      row.createCell(2).setCellValue(District.getEpaMonitorNameStr(r._1._1))
+      if(r._1._2.isDefined){			
+				row.createCell(3).setCellValue(r._1._2.get)
+			}else{
+				row.createCell(3).setCellValue("-")
+			}      
+    }
+    finishExcel(reportFilePath, pkg, wb)
+  }
 }

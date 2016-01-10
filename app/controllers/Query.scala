@@ -55,7 +55,7 @@ object Query extends Controller {
   def getPeriodReportMap(monitor: EpaMonitor.Value, mt: MonitorType.Value, period: Period)(start: DateTime, end: DateTime) = {
     val epaRecordList = Record.getEpaHourRecord(monitor, mt, start, end)
     def periodSlice(period_start: DateTime, period_end: DateTime) = {
-      epaRecordList.dropWhile { _.time >= period_start }.takeWhile { _.time < period_end }
+      epaRecordList.dropWhile { _.time < period_start }.takeWhile { _.time < period_end }
     }
     val pairs =
       if (period.getHours ==1) {
@@ -120,11 +120,12 @@ object Query extends Controller {
       for {
         m <- epaMonitors
         mt <- monitorTypes
+        valueMap = epaRecordMap(m)(mt)
         timeData = timeSeq.map { t =>
           val time = t._1
           val x = t._2
-          if (epaRecordMap(m)(mt).contains(time))
-            Seq(Some(time.getMillis.toDouble), Some(epaRecordMap(m)(mt)(time).toDouble))
+          if (valueMap.contains(time))
+            Seq(Some(time.getMillis.toDouble), Some(valueMap(time).toDouble))
           else
             Seq(Some(time.getMillis.toDouble), None)
         }
@@ -280,6 +281,7 @@ object Query extends Controller {
           else
             chart.title("text")
 
+
         Ok.sendFile(excelFile, fileName = _ =>
           play.utils.UriEncoding.encodePathSegment(downloadFileName + ".xlsx", "UTF-8"),
           onClose = () => { Files.deleteIfExists(excelFile.toPath()) })
@@ -428,8 +430,9 @@ object Query extends Controller {
     val Day = Value("day")
   }
 
+  import java.nio.file.Files
   def pm25OverLawReport(epaMonitorStr: String, filterTypeStr: String,
-                        startStr: String, endStr: String) = Security.Authenticated {
+                        startStr: String, endStr: String, outputTypeStr:String) = Security.Authenticated {
     implicit request =>
       import scala.collection.JavaConverters._
       val epaMonitors = epaMonitorStr.split(':').map { EpaMonitor.withName }.toList
@@ -437,7 +440,8 @@ object Query extends Controller {
       val (start, end) =
         (DateTime.parse(startStr, DateTimeFormat.forPattern("YYYY-MM-dd")),
           DateTime.parse(endStr, DateTimeFormat.forPattern("YYYY-MM-dd")))
-
+      val outputType = OutputType.withName(outputTypeStr)
+          
       val mt = MonitorType.withName("PM2.5")
       val period: Period =
         if (filterType == Pm25FilterType.Hour)
@@ -461,7 +465,14 @@ object Query extends Controller {
         }
       
       val order = overLawRecords.sortBy(_._2).reverse.zipWithIndex
-      Ok(views.html.Pm25OverLawReport(filterType, start, end, order))
+      if(outputType == OutputType.html)
+        Ok(views.html.Pm25OverLawReport(filterType, start, end, order))
+      else{
+        val excelFile = ExcelUtility.Pm25OverLawReport(filterType, start, end, order)
+        Ok.sendFile(excelFile, fileName = _ =>
+          play.utils.UriEncoding.encodePathSegment("PM25超標統計" + ".xlsx", "UTF-8"),
+          onClose = () => { Files.deleteIfExists(excelFile.toPath()) })
+      }
   }
 
   def psiQuery = Security.Authenticated {
@@ -469,13 +480,14 @@ object Query extends Controller {
   }
 
   def psiOverLawReport(epaMonitorStr: String,
-                       startStr: String, endStr: String) = Security.Authenticated {
+                       startStr: String, endStr: String, outputTypeStr:String) = Security.Authenticated {
     implicit request =>
       import scala.collection.JavaConverters._
       val epaMonitors = epaMonitorStr.split(':').map { EpaMonitor.withName }
       val (start, end) =
         (DateTime.parse(startStr, DateTimeFormat.forPattern("YYYY-MM-dd")),
           DateTime.parse(endStr, DateTimeFormat.forPattern("YYYY-MM-dd")))
+      val outputType = OutputType.withName(outputTypeStr)
 
       val overLawList =
         for {
@@ -486,17 +498,25 @@ object Query extends Controller {
         }
 
       val order = overLawList.sortBy(_._2).reverse.zipWithIndex
-      Ok(views.html.PsiOverLawReport(start, end, order))
+      if(outputType == OutputType.html)
+        Ok(views.html.PsiOverLawReport(start, end, order))
+      else{
+        val excelFile = ExcelUtility.PsiOverLawReport(start, end, order)
+        Ok.sendFile(excelFile, fileName = _ =>
+          play.utils.UriEncoding.encodePathSegment("PSI超標統計" + ".xlsx", "UTF-8"),
+          onClose = () => { Files.deleteIfExists(excelFile.toPath()) })
+      }
   }
 
   def sitePsiOrder = Security.Authenticated {
     Ok(views.html.SitePsiQuery())
   }
 
-  def sitePsiOrderReport(startStr: String, endStr: String) = Security.Authenticated {
+  def sitePsiOrderReport(startStr: String, endStr: String, outputTypeStr: String) = Security.Authenticated {
     val (start, end) =
       (DateTime.parse(startStr, DateTimeFormat.forPattern("YYYY-MM-dd")),
         DateTime.parse(endStr, DateTimeFormat.forPattern("YYYY-MM-dd")))
+    val outputType = OutputType.withName(outputTypeStr)
 
     val overLawList =
       for {
@@ -507,21 +527,28 @@ object Query extends Controller {
       }
 
     val order = overLawList.sortBy(_._2).reverse.zipWithIndex
-
-    Ok(views.html.PsiOverLawReport(start, end, order))
+    if (outputType == OutputType.html)
+      Ok(views.html.PsiOverLawReport(start, end, order))
+    else {
+      val excelFile = ExcelUtility.PsiOverLawReport(start, end, order)
+      Ok.sendFile(excelFile, fileName = _ =>
+        play.utils.UriEncoding.encodePathSegment("PSI超標統計" + ".xlsx", "UTF-8"),
+        onClose = () => { Files.deleteIfExists(excelFile.toPath()) })
+    }
   }
 
   def districtPsiOrder = Security.Authenticated {
     Ok(views.html.DistrictPsiQuery())
   }
 
-  def districtPsiOrderReport(startStr: String, endStr: String) = Security.Authenticated {
+  def districtPsiOrderReport(startStr: String, endStr: String, outputTypeStr: String) = Security.Authenticated {
     implicit request =>
       import scala.collection.JavaConverters._
       
       val (start, end) =
         (DateTime.parse(startStr, DateTimeFormat.forPattern("YYYY-MM-dd")),
           DateTime.parse(endStr, DateTimeFormat.forPattern("YYYY-MM-dd")))
+      val outputType = OutputType.withName(outputTypeStr)
 
       val overLawList =
         for {
@@ -537,14 +564,21 @@ object Query extends Controller {
         }
 
       val order = overLawList.sortBy(_._2).reverse.zipWithIndex
-      Ok(views.html.DistrictPsiOverLawReport(start, end, order))
+      if (outputType == OutputType.html)
+        Ok(views.html.DistrictPsiOverLawReport(start, end, order))
+      else {
+        val excelFile = ExcelUtility.DistrictPsiOverLawReport(start, end, order)
+        Ok.sendFile(excelFile, fileName = _ =>
+          play.utils.UriEncoding.encodePathSegment("行政區PSI超標統計" + ".xlsx", "UTF-8"),
+          onClose = () => { Files.deleteIfExists(excelFile.toPath()) })
+      }
   }
     
   def districtOrder = Security.Authenticated {
     Ok(views.html.DistrictOrder())
   }
   
-  def districtOrderReport(monitorTypeStr:String, startStr: String, endStr: String) = Security.Authenticated {
+  def districtOrderReport(monitorTypeStr:String, startStr: String, endStr: String, outputTypeStr: String) = Security.Authenticated {
     implicit request =>
       import scala.collection.JavaConverters._
       
@@ -552,6 +586,7 @@ object Query extends Controller {
       val (start, end) =
         (DateTime.parse(startStr, DateTimeFormat.forPattern("YYYY-MM-dd")),
           DateTime.parse(endStr, DateTimeFormat.forPattern("YYYY-MM-dd")))
+      val outputType = OutputType.withName(outputTypeStr)
 
       val orderList =
         for {
@@ -569,7 +604,14 @@ object Query extends Controller {
         }
 
       val order = orderList.sortBy(_._2).reverse.zipWithIndex
-      Ok(views.html.orderReport(monitorType, start, end, order))
+      if (outputType == OutputType.html)
+        Ok(views.html.orderReport(monitorType, start, end, order))
+      else {
+        val excelFile = ExcelUtility.DistrictOrderReport(monitorType, start, end, order)
+        Ok.sendFile(excelFile, fileName = _ =>
+          play.utils.UriEncoding.encodePathSegment(s"行政區${MonitorType.map(monitorType).desp}排名" + ".xlsx", "UTF-8"),
+          onClose = () => { Files.deleteIfExists(excelFile.toPath()) })
+      }  
   }
 
 }

@@ -24,15 +24,24 @@ GET		/MonitorTypeRose		controllers.Query.monitorTypeRose
 GET		/WindRoseReport/:monitor/:monitorType/:nWays/:start/:end	controllers.Query.windRoseReport(monitor, monitorType, nWays:Int, start, end)
 
 GET		/Pm25Query				controllers.Query.pm25Query
-GET		/Pm25OverLawReport/:epaMonitor/:filterType/:start/:end	controllers.Query.pm25OverLawReport(epaMonitor,filterType, start, end)
+GET		/Pm25OverLawReport/:epaMonitor/:filterType/:start/:end	controllers.Query.pm25OverLawReport(epaMonitor,filterType, start, end, outputTypeStr="html")
+GET		/Excel/Pm25OverLawReport/:epaMonitor/:filterType/:start/:end	controllers.Query.pm25OverLawReport(epaMonitor,filterType, start, end, outputTypeStr="excel")
+
 GET		/PsiQuery				controllers.Query.psiQuery
-GET		/PsiOverLawReport/:epaMonitor/:start/:end	controllers.Query.psiOverLawReport(epaMonitor, start, end)
+GET		/PsiOverLawReport/:epaMonitor/:start/:end	controllers.Query.psiOverLawReport(epaMonitor, start, end, outputTypeStr="html")
+GET		/Excel/PsiOverLawReport/:epaMonitor/:start/:end	controllers.Query.psiOverLawReport(epaMonitor, start, end, outputTypeStr="excel")
+
 GET		/SitePsiOrder			controllers.Query.sitePsiOrder
-GET		/SitePsiOrderReport/:start/:end			controllers.Query.sitePsiOrderReport(start, end)
+GET		/SitePsiOrderReport/:start/:end			controllers.Query.sitePsiOrderReport(start, end, outputTypeStr="html")
+GET		/Excel/SitePsiOrderReport/:start/:end			controllers.Query.sitePsiOrderReport(start, end, outputTypeStr="excel")
+
 GET		/DistrictPsiOrder		controllers.Query.districtPsiOrder
-GET		/DistrictPsiOrderReport/:start/:end		controllers.Query.districtPsiOrderReport(start, end)
+GET		/DistrictPsiOrderReport/:start/:end				controllers.Query.districtPsiOrderReport(start, end, outputTypeStr="html")
+GET		/Excel/DistrictPsiOrderReport/:start/:end		controllers.Query.districtPsiOrderReport(start, end, outputTypeStr="excel")
+
 GET		/DistrictOrder			controllers.Query.districtOrder
-GET		/DistrictOrderReport/:monitorType/:start/:end	controllers.Query.districtOrderReport(monitorType, start, end)
+GET		/DistrictOrderReport/:monitorType/:start/:end	controllers.Query.districtOrderReport(monitorType, start, end, outputTypeStr="html")
+GET		/Excel/DistrictOrderReport/:monitorType/:start/:end	controllers.Query.districtOrderReport(monitorType, start, end, outputTypeStr="excel")
 
 GET		/SiteInfo				controllers.Application.siteInfo
 
