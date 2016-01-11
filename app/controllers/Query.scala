@@ -553,14 +553,12 @@ object Query extends Controller {
       val overLawList =
         for {
           d <- District.list
+          mList = EpaMonitor.mvList.filter { m => EpaMonitor.map(m).districtID.isDefined && 
+            EpaMonitor.map(m).districtID.get == d.id } if mList.length > 0
         } yield {
-          val mList = EpaMonitor.mvList.filter { m => EpaMonitor.map(m).districtID.isDefined && 
-            EpaMonitor.map(m).districtID.get == d.id }
-          
-          assert(mList.length != 0)
-          val overLaw = Psi.getPsiOverLawCount(mList, start, end, 100).get
-                    
-          (District(d.id), overLaw.toFloat/mList.length)
+          val overLaw = Psi.getPsiOverLawCount(mList, start, end, 100).get  
+          val monitorNames = mList.map { EpaMonitor.map(_).name }.mkString(", ")
+          (District(d.id), monitorNames, overLaw.toFloat/mList.length)
         }
 
       val order = overLawList.sortBy(_._2).reverse.zipWithIndex
@@ -578,10 +576,10 @@ object Query extends Controller {
     Ok(views.html.DistrictOrder())
   }
   
-  def districtOrderReport(monitorTypeStr:String, startStr: String, endStr: String, outputTypeStr: String) = Security.Authenticated {
+  def districtOrderReport(epaMonitorFilterStr:String, monitorTypeStr:String, startStr: String, endStr: String, outputTypeStr: String) = Security.Authenticated {
     implicit request =>
       import scala.collection.JavaConverters._
-      
+      val epaMonitorFilter = EpaMonitorFilter.withName(epaMonitorFilterStr)
       val monitorType = MonitorType.withName(monitorTypeStr)
       val (start, end) =
         (DateTime.parse(startStr, DateTimeFormat.forPattern("YYYY-MM-dd")),
@@ -590,20 +588,20 @@ object Query extends Controller {
 
       val orderList =
         for {
-          d <- District.list
+          d <- District.vList
+          mList = EpaMonitor.mvList.filter { EpaMonitorFilter.filter(epaMonitorFilter) }.
+            filter {District.filter(d) } if mList.length > 0
         } yield {
-          val mList = EpaMonitor.districtNormalMonitor.filter { EpaMonitor.map(_).districtID == Some(d.id) }
-          assert(mList.length != 0)
           val avgList = mList.map{Record.getEpaHourRecordAvg(_, monitorType, start, end).get}
             .filter { _.isDefined }.map{_.get}
-          
+          val monitorNames = mList.map { EpaMonitor.map(_).name }.mkString(", ")
           if(avgList.length != 0)
-            (District(d.id), Some(avgList.sum/avgList.length))
+            (District(d.id), monitorNames, Some(avgList.sum/avgList.length))
           else
-            (District(d.id), None)
+            (District(d.id), monitorNames, None)
         }
 
-      val order = orderList.sortBy(_._2).reverse.zipWithIndex
+      val order = orderList.sortBy(_._3).reverse.zipWithIndex
       if (outputType == OutputType.html)
         Ok(views.html.orderReport(monitorType, start, end, order))
       else {

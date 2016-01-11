@@ -16,14 +16,10 @@ object District extends Enumeration{
   
   val map:Map[Value, District] = Map(list.map{e=>Value(e.id)->e}:_*)
   val idMap:Map[Int, Value] = Map(list.map{e=>e.id->District(e.id)}:_*)
-  val mvList = list.map{d=>District(d.id)}
-  def getEpaMonitorNameStr(d:District.Value)={
-    val monitorNames = EpaMonitor.mvList.filter { EpaMonitor.map(_).districtID == Some(d.id) }.map { EpaMonitor.map(_).name }.mkString(", ")
-    monitorNames
+  val vList = list.map{d=>District(d.id)}
+  def filter(d:District.Value)={m:EpaMonitor.Value=>
+    EpaMonitor.map(m).districtID.isDefined && 
+            EpaMonitor.map(m).districtID.get == d.id
   }
-  
-  def getNormalEpaMonitorNameStr(d:District.Value)={
-    val monitorNames = EpaMonitor.districtNormalMonitor.filter { EpaMonitor.map(_).districtID == Some(d.id) }.map { EpaMonitor.map(_).name }.mkString(", ")
-    monitorNames
-  }
+
 }

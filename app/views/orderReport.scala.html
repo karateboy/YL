@@ -1,6 +1,6 @@
 @* orderReport Template File *@
 @import com.github.nscala_time.time.Imports._
-@(mt:MonitorType.Value,start:DateTime, end:DateTime, records: List[((District.Value, Option[Float]), Int)])
+@(mt:MonitorType.Value,start:DateTime, end:DateTime, records: List[((District.Value, String, Option[Float]), Int)])
 <H3>行政轄區@{MonitorType.map(mt).desp}排序:</H3>
 <H5>區間:@start.toString("YYYY-MM-dd HH:mm")~@end.toString("YYYY-MM-dd HH:mm")</H5>
 
@@ -18,9 +18,9 @@
 		<tr>
 			<td>@(r._2+1)</td>
 			<td>@District.map(r._1._1).name</td>
-			<td>@District.getNormalEpaMonitorNameStr(r._1._1)</td>
-			@if(r._1._2.isDefined){			
-				<td>@{"%.1f".format(r._1._2.get)}</td>
+			<td>@r._1._2</td>
+			@if(r._1._3.isDefined){			
+				<td>@{"%.1f".format(r._1._3.get)}</td>
 			}else{
 				<td>-</td>
 			}

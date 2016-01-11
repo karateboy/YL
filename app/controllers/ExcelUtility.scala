@@ -193,7 +193,7 @@ object ExcelUtility {
     finishExcel(reportFilePath, pkg, wb)
   }
 
-  def DistrictPsiOverLawReport(start:DateTime, end:DateTime, records: List[((District.Value, Float), Int)])={
+  def DistrictPsiOverLawReport(start:DateTime, end:DateTime, records: List[((District.Value, String, Float), Int)])={
     implicit val (reportFilePath, pkg, wb) = prepareTemplate("districtReport.xlsx")
     val evaluator = wb.getCreationHelper().createFormulaEvaluator()
     val style = createStyle(MonitorType.withName("SO2"))
@@ -211,14 +211,14 @@ object ExcelUtility {
       row.createCell(1).setCellStyle(style)
       row.getCell(1).setCellValue(District.map(r._1._1).name)
       row.createCell(2).setCellStyle(style)
-      row.getCell(2).setCellValue(District.getEpaMonitorNameStr(r._1._1))
+      row.getCell(2).setCellValue(r._1._2)
       row.createCell(3).setCellStyle(style)
-      row.getCell(3).setCellValue(r._1._2)
+      row.getCell(3).setCellValue(r._1._3)
     }
     finishExcel(reportFilePath, pkg, wb)
   }
   
-  def DistrictOrderReport(mt:MonitorType.Value,start:DateTime, end:DateTime, records: List[((District.Value, Option[Float]), Int)])={
+  def DistrictOrderReport(mt:MonitorType.Value,start:DateTime, end:DateTime, records: List[((District.Value, String, Option[Float]), Int)])={
     implicit val (reportFilePath, pkg, wb) = prepareTemplate("districtReport.xlsx")
     val evaluator = wb.getCreationHelper().createFormulaEvaluator()
     
@@ -238,10 +238,10 @@ object ExcelUtility {
       row.createCell(1).setCellStyle(style)
       row.getCell(1).setCellValue(District.map(r._1._1).name)
       row.createCell(2).setCellStyle(style)
-      row.getCell(2).setCellValue(District.getEpaMonitorNameStr(r._1._1))
+      row.getCell(2).setCellValue(r._1._2)
       row.createCell(3).setCellStyle(style)
-      if(r._1._2.isDefined){			
-				row.getCell(3).setCellValue(r._1._2.get)
+      if(r._1._3.isDefined){			
+				row.getCell(3).setCellValue(r._1._3.get)
 			}else{
 				row.getCell(3).setCellValue("-")
 			}      

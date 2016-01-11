@@ -1,7 +1,7 @@
 @* historyReport Template File *@
 @import controllers.Query._
 @import com.github.nscala_time.time.Imports._
-@(start:DateTime, end:DateTime, records: List[((District.Value, Float), Int)])
+@(start:DateTime, end:DateTime, records: List[((District.Value, String, Float), Int)])
 
 <H3>PSI超標統計,日PSI>100</H3>
 <H5>區間:@start.toString("YYYY-MM-dd HH:mm")~@end.toString("YYYY-MM-dd HH:mm")</H5>
@@ -20,8 +20,8 @@
 		<tr>
 			<td>@(r._2+1)</td>
 			<td>@District.map(r._1._1).name</td>
-			<td>@District.getEpaMonitorNameStr(r._1._1)</td>			
-			<td>@{"%.1f".format(r._1._2)}</td>
+			<td>@r._1._2</td>			
+			<td>@{"%.1f".format(r._1._3)}</td>
 		</tr>
 		}
 </tbody>

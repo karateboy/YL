@@ -40,8 +40,8 @@ GET		/DistrictPsiOrderReport/:start/:end				controllers.Query.districtPsiOrderRe
 GET		/Excel/DistrictPsiOrderReport/:start/:end		controllers.Query.districtPsiOrderReport(start, end, outputTypeStr="excel")
 
 GET		/DistrictOrder			controllers.Query.districtOrder
-GET		/DistrictOrderReport/:monitorType/:start/:end	controllers.Query.districtOrderReport(monitorType, start, end, outputTypeStr="html")
-GET		/Excel/DistrictOrderReport/:monitorType/:start/:end	controllers.Query.districtOrderReport(monitorType, start, end, outputTypeStr="excel")
+GET		/DistrictOrderReport/:epaMonitorFilter/:monitorType/:start/:end	controllers.Query.districtOrderReport(epaMonitorFilter, monitorType, start, end, outputTypeStr="html")
+GET		/Excel/DistrictOrderReport/:epaMonitorFilter/:monitorType/:start/:end	controllers.Query.districtOrderReport(epaMonitorFilter, monitorType, start, end, outputTypeStr="excel")
 
 GET		/SiteInfo				controllers.Application.siteInfo
 
