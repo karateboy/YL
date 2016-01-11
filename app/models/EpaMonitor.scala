@@ -68,6 +68,6 @@ object EpaMonitor extends Enumeration{
   }
   
   val YunlinMonitorList = List(37, 38, 41, 83).map { EpaMonitor.idMap }
-  def normalMonitor = mvList.filter(map(_).ordinary)
-  def districtNormalMonitor = mvList.filter(map(_).ordinary)
+  def normalMonitor = mvList.filter(map(_).id < 1000)
+
 }
