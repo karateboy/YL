@@ -592,7 +592,7 @@ object Query extends Controller {
         for {
           d <- District.list
         } yield {
-          val mList = EpaMonitor.normalMonitor.filter { EpaMonitor.map(_).districtID == Some(d.id) }
+          val mList = EpaMonitor.districtNormalMonitor.filter { EpaMonitor.map(_).districtID == Some(d.id) }
           assert(mList.length != 0)
           val avgList = mList.map{Record.getEpaHourRecordAvg(_, monitorType, start, end).get}
             .filter { _.isDefined }.map{_.get}

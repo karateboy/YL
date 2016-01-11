@@ -23,7 +23,7 @@ object District extends Enumeration{
   }
   
   def getNormalEpaMonitorNameStr(d:District.Value)={
-    val monitorNames = EpaMonitor.normalMonitor.filter { EpaMonitor.map(_).districtID == Some(d.id) }.map { EpaMonitor.map(_).name }.mkString(", ")
+    val monitorNames = EpaMonitor.districtNormalMonitor.filter { EpaMonitor.map(_).districtID == Some(d.id) }.map { EpaMonitor.map(_).name }.mkString(", ")
     monitorNames
   }
 }

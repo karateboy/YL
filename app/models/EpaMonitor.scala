@@ -14,7 +14,7 @@ object EpaMonitor extends Enumeration{
         Select * 
         From EpaMonitor
         """.map { r =>           
-          EpaMonitor(r.int(1), r.string(2), r.intOpt(3), r.boolean(4))}.list.apply
+          EpaMonitor(id=r.int(1), name=r.string(2), districtID=r.intOpt(3), industrial=r.boolean(4))}.list.apply
     }
   
   var map:Map[Value, EpaMonitor] = Map(monitorList.map{e=>Value(e.id, e.name)->e}:_*)
@@ -61,4 +61,5 @@ object EpaMonitor extends Enumeration{
   
   val YunlinMonitorList = List(37, 38, 41, 83).map { EpaMonitor.idMap }
   def normalMonitor = idMap.filter(_._1 < 1000).values.toList.sortBy { map(_).id }
+  def districtNormalMonitor = idMap.filter(_._1 < 1000).values.filter { !map(_).industrial }.toList.sortBy { map(_).id }
 }
