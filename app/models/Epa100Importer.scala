@@ -32,6 +32,7 @@ class Epa100Importer extends Actor {
       val files = listAllFiles(path)
       for (f <- files) {
         importEpaData(f)
+        f.delete()
       }
 
       Logger.info("Finish import")
