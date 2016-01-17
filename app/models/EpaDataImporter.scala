@@ -24,8 +24,14 @@ class EpaDataImporter extends Actor {
   var errorCount = 0
   def receive = {
     case ImportYesterday =>
-      importEpaDataTask(0, 1000, DateTime.yesterday().toLocalDate().toDateTimeAtStartOfDay(), self)
-
+      val yesterday = DateTime.yesterday().toLocalDate().toDateTimeAtStartOfDay()
+      val alreadyInDb = getRecordCountOnDate(yesterday)
+      Logger.debug(s"Already ${alreadyInDb} in DB for ${yesterday}")
+      if(alreadyInDb.isDefined)
+        importEpaDataTask(alreadyInDb.get, 1000, yesterday, self)
+      else
+        importEpaDataTask(0, 1000, yesterday, self)
+        
     case FinishImport(offset, count, total, date) =>
       if (total == count) {
         //more to import
@@ -37,6 +43,17 @@ class EpaDataImporter extends Actor {
         //no more and end itself
         self ! PoisonPill
       }
+  }
+
+  def getRecordCountOnDate(date: DateTime) = {
+    val ts: java.sql.Timestamp = date
+    DB readOnly { implicit session =>
+      sql"""
+      Select count(*)
+      From hour_data
+      Where MDate >= ${ts}
+      """.map { _.int(1) }.single.apply
+    }
   }
 
   def importEpaDataTask(offset:Int, count:Int, date:DateTime, importer: ActorRef) {
