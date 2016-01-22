@@ -28,7 +28,7 @@ class EpaDataImporter extends Actor {
       val alreadyInDb = getRecordCountOnDate(yesterday)
       Logger.debug(s"Already ${alreadyInDb} in DB for ${yesterday}")
       if(alreadyInDb.isDefined)
-        importEpaDataTask(alreadyInDb.get, 1000, yesterday, self)
+        importEpaDataTask(alreadyInDb.get/24, 1000, yesterday, self)
       else
         importEpaDataTask(0, 1000, yesterday, self)
         
