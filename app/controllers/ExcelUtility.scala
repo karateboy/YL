@@ -218,14 +218,14 @@ object ExcelUtility {
     finishExcel(reportFilePath, pkg, wb)
   }
   
-  def DistrictOrderReport(mt:MonitorType.Value,start:DateTime, end:DateTime, records: List[((District.Value, String, Option[Float]), Int)])={
+  def DistrictOrderReport(mt:MonitorType.Value, filterExplain:String, start:DateTime, end:DateTime, records: List[((District.Value, String, Option[Float]), Int)])={
     implicit val (reportFilePath, pkg, wb) = prepareTemplate("districtReport.xlsx")
     val evaluator = wb.getCreationHelper().createFormulaEvaluator()
     
     val style = createStyle(mt)
     val sheet = wb.getSheetAt(0)
     val headerRow = sheet.getRow(0)
-    headerRow.getCell(0).setCellValue(s"行政轄區${MonitorType.map(mt).desp}排序:")
+    headerRow.getCell(0).setCellValue(s"行政轄區${MonitorType.map(mt).desp}排序: (${filterExplain})")
     sheet.getRow(2).getCell(3).setCellValue("平均值")
     sheet.getRow(1).getCell(0).setCellValue(s"區間:${start.toString("YYYY-MM-dd HH:mm")}~${end.toString("YYYY-MM-dd HH:mm")}")
     

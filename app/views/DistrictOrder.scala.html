@@ -24,10 +24,10 @@
 	            				@for(mf<-EpaMonitorFilter.values.toList.sorted){
 	            					@if(mf == EpaMonitorFilter.values.toList.sorted.head){
 	            						<label class="btn btn-outline btn-primary dim active">
-										<input type="radio" name="epaMonitorFilter" id="@mf" checked>@EpaMonitorFilter.map(mf)</label>	
+										<input type="checkbox" name="epaMonitorFilter" id="@mf" checked>@EpaMonitorFilter.map(mf)</label>	
 	            					}else{
 	            						<label class="btn btn-outline btn-primary dim">
-										<input type="radio" name="epaMonitorFilter" id="@mf">@EpaMonitorFilter.map(mf)</label>
+										<input type="checkbox" name="epaMonitorFilter" id="@mf">@EpaMonitorFilter.map(mf)</label>
 	            					}	            					
 	            				}
 	            				</div>
@@ -136,7 +136,13 @@ $( document ).ready(function() {
 		$('#reportDiv').html('');
 		$("body").css("cursor", "progress");
 
-		var epaMonitorFilterParam = epaMonitorFilter[0].id;
+		var epaMonitorFilterParam='';
+		for (var i = 0; i < epaMonitorFilter.length; i++) {
+			if(epaMonitorFilterParam=='')
+				epaMonitorFilterParam = epaMonitorFilter[i].id;
+			else
+				epaMonitorFilterParam += ':' + epaMonitorFilter[i].id;
+		}
 		
 		var monitorTypeParam='';
 		for (var i = 0; i < monitorTypes.length; i++) {

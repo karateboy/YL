@@ -22,4 +22,13 @@ object EpaMonitorFilter extends Enumeration{
         EpaMonitor.map(m).other
     }
   }
+  
+  def filters(fs:Seq[EpaMonitorFilter.Value])(m:EpaMonitor.Value):Boolean={
+    def op(a:Boolean,b:Boolean)={
+      a || b
+    }
+    
+    fs.map{filter(_)(m)}.fold(false){op}
+
+  }
 }
