@@ -70,4 +70,7 @@ object EpaMonitor extends Enumeration{
   val YunlinMonitorList = List(37, 38, 41, 83).map { EpaMonitor.idMap }
   def normalMonitor = mvList.filter(map(_).id < 1000)
 
+  def getMonitorClassStr(m:EpaMonitor.Value)={
+    EpaMonitorFilter.values.toList.filter { f=> EpaMonitorFilter.filter(f)(m) }.map { EpaMonitorFilter.map }.mkString(",")
+  }
 }

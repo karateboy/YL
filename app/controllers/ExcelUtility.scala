@@ -171,7 +171,29 @@ object ExcelUtility {
     }
     finishExcel(reportFilePath, pkg, wb)
   }
-  
+
+  def monitorTypeOverLawReport(mt:MonitorType.Value, lawStand:Float, 
+      start:DateTime, end:DateTime, records:List[((EpaMonitor.Value, Int), Int)])={
+    implicit val (reportFilePath, pkg, wb) = prepareTemplate("report.xlsx")
+    val evaluator = wb.getCreationHelper().createFormulaEvaluator()
+    
+    val sheet = wb.getSheetAt(0)
+    val headerRow = sheet.getRow(0)
+    headerRow.getCell(0).setCellValue(s"${MonitorType.map(mt).desp}超標統計,法規值(${lawStand})")
+    sheet.getRow(2).getCell(2).setCellValue("超標小時數")
+    
+    sheet.getRow(1).getCell(0).setCellValue(s"區間:${start.toString("YYYY-MM-dd HH:mm")}~${end.toString("YYYY-MM-dd HH:mm")}")
+    
+    for(r <- records){      
+      val rowN = r._2 + 3
+      val row = sheet.createRow(rowN)
+      row.createCell(0).setCellValue(r._2+1)
+      row.createCell(1).setCellValue(EpaMonitor.map(r._1._1).name)
+      row.createCell(2).setCellValue(r._1._2)
+    }
+    finishExcel(reportFilePath, pkg, wb)
+  }
+
   def PsiOverLawReport(start:DateTime, end:DateTime, records:List[((EpaMonitor.Value, Int), Int)])={
     implicit val (reportFilePath, pkg, wb) = prepareTemplate("report.xlsx")
     val evaluator = wb.getCreationHelper().createFormulaEvaluator()
@@ -242,6 +264,40 @@ object ExcelUtility {
       row.createCell(3).setCellStyle(style)
       if(r._1._3.isDefined){			
 				row.getCell(3).setCellValue(r._1._3.get)
+			}else{
+				row.getCell(3).setCellValue("-")
+			}      
+    }
+    finishExcel(reportFilePath, pkg, wb)
+  }
+  
+  def monitorOrderReport(mt:MonitorType.Value, filterExplain:String, start:DateTime, end:DateTime, records: List[((EpaMonitor.Value, Option[Float]), Int)])={
+    implicit val (reportFilePath, pkg, wb) = prepareTemplate("districtReport.xlsx")
+    val evaluator = wb.getCreationHelper().createFormulaEvaluator()
+    
+    val style = createStyle(mt)
+    val sheet = wb.getSheetAt(0)
+    val headerRow = sheet.getRow(0)
+    headerRow.getCell(0).setCellValue(s"測站${MonitorType.map(mt).desp}排序: (${filterExplain})")
+    sheet.getRow(2).getCell(1).setCellValue("測站")
+    sheet.getRow(2).getCell(2).setCellValue("測站分類")
+    sheet.getRow(2).getCell(3).setCellValue("平均值")
+    sheet.getRow(1).getCell(0).setCellValue(s"區間:${start.toString("YYYY-MM-dd HH:mm")}~${end.toString("YYYY-MM-dd HH:mm")}")
+    
+    
+    for(r <- records){      
+      val rowN = r._2 + 3
+      val row = sheet.createRow(rowN)
+      row.createCell(0).setCellStyle(style)
+      row.getCell(0).setCellValue(r._2+1)
+      row.createCell(1).setCellStyle(style)
+      row.getCell(1).setCellValue(EpaMonitor.map(r._1._1).name)
+      row.createCell(2).setCellStyle(style)
+      val monitorClassStr = EpaMonitor.getMonitorClassStr(r._1._1)
+      row.getCell(2).setCellValue(monitorClassStr)
+      row.createCell(3).setCellStyle(style)
+      if(r._1._2.isDefined){			
+				row.getCell(3).setCellValue(r._1._2.get)
 			}else{
 				row.getCell(3).setCellValue("-")
 			}      

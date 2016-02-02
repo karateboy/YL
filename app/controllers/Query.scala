@@ -424,7 +424,7 @@ object Query extends Controller {
   def pm25Query = Security.Authenticated {
     Ok(views.html.Pm25OverLawQuery())
   }
-
+  
   object Pm25FilterType extends Enumeration {
     val Hour = Value("hour")
     val Day = Value("day")
@@ -475,7 +475,39 @@ object Query extends Controller {
       }
   }
 
+  def monitorTypeOverLaw = Security.Authenticated {
+    Ok(views.html.monitorTypeOverLaw())
+  }
+  
+  def mtOverLawReport(epaMonitorStr:String ,monitorTypeStr:String, lawStandardStr:String, 
+      startStr:String, endStr:String, outputTypeStr:String)= Security.Authenticated {
+      val epaMonitors = epaMonitorStr.split(':').map { EpaMonitor.withName }.toList
+      val monitorType = MonitorType.withName(monitorTypeStr)
+      val lawStandard = java.lang.Float.parseFloat(lawStandardStr)
+      val (start, end) =
+        (DateTime.parse(startStr, DateTimeFormat.forPattern("YYYY-MM-dd")),
+          DateTime.parse(endStr, DateTimeFormat.forPattern("YYYY-MM-dd")))
+      val outputType = OutputType.withName(outputTypeStr)
+
+      val overLawRecords =
+          for {
+            m <- epaMonitors
+            overLawOpt = Record.getEpaHourRecordOverCount(m, monitorType, start, end, lawStandard) if overLawOpt.isDefined
+          } yield (m, overLawOpt.get)
+      
+      val order = overLawRecords.sortBy(_._2).reverse.zipWithIndex
+      if(outputType == OutputType.html)
+        Ok(views.html.monitorTypeOverLawReport(monitorType, lawStandard, start, end, order))
+      else{
+        val excelFile = ExcelUtility.monitorTypeOverLawReport(monitorType, lawStandard, start, end, order)
+        Ok.sendFile(excelFile, fileName = _ =>
+          play.utils.UriEncoding.encodePathSegment(s"${MonitorType.map(monitorType).desp}超標統計.xlsx", "UTF-8"),
+          onClose = () => { Files.deleteIfExists(excelFile.toPath()) })
+      }
+  }
+
   def psiQuery = Security.Authenticated {
+    implicit request =>
     Ok(views.html.PsiQuery())
   }
 
@@ -609,6 +641,40 @@ object Query extends Controller {
         val excelFile = ExcelUtility.DistrictOrderReport(monitorType, filterExplain, start, end, order)
         Ok.sendFile(excelFile, fileName = _ =>
           play.utils.UriEncoding.encodePathSegment(s"行政區${MonitorType.map(monitorType).desp}排名" + ".xlsx", "UTF-8"),
+          onClose = () => { Files.deleteIfExists(excelFile.toPath()) })
+      }  
+  }
+  
+  def monitorOrder = Security.Authenticated {
+    Ok(views.html.monitorOrder())
+  }
+  
+  def monitorOrderReport(epaMonitorFilterStr:String, monitorTypeStr:String, startStr: String, endStr: String, outputTypeStr: String) = Security.Authenticated {
+    implicit request =>
+      import scala.collection.JavaConverters._
+      val epaMonitorFilter = epaMonitorFilterStr.split(":").map(EpaMonitorFilter.withName)
+      val monitorType = MonitorType.withName(monitorTypeStr)
+      val (start, end) =
+        (DateTime.parse(startStr, DateTimeFormat.forPattern("YYYY-MM-dd")),
+          DateTime.parse(endStr, DateTimeFormat.forPattern("YYYY-MM-dd")))
+      val outputType = OutputType.withName(outputTypeStr)
+
+      val orderList =
+        for {
+          monitor<-EpaMonitor.normalMonitor.filter { EpaMonitorFilter.filters(epaMonitorFilter) }
+          avg = Record.getEpaHourRecordAvg(monitor, monitorType, start, end) if avg.isDefined
+        } yield {
+          (monitor, avg.get)
+        }
+
+      val order = orderList.sortBy(_._2).reverse.zipWithIndex
+      val filterExplain = epaMonitorFilter.map { EpaMonitorFilter.map }.mkString(",")
+      if (outputType == OutputType.html)
+        Ok(views.html.monitorOrderReport(monitorType, filterExplain, start, end, order))
+      else {
+        val excelFile = ExcelUtility.monitorOrderReport(monitorType, filterExplain, start, end, order)
+        Ok.sendFile(excelFile, fileName = _ =>
+          play.utils.UriEncoding.encodePathSegment(s"測站${MonitorType.map(monitorType).desp}排名" + ".xlsx", "UTF-8"),
           onClose = () => { Files.deleteIfExists(excelFile.toPath()) })
       }  
   }

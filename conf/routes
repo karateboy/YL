@@ -43,6 +43,14 @@ GET		/DistrictOrder			controllers.Query.districtOrder
 GET		/DistrictOrderReport/:epaMonitorFilter/:monitorType/:start/:end	controllers.Query.districtOrderReport(epaMonitorFilter, monitorType, start, end, outputTypeStr="html")
 GET		/Excel/DistrictOrderReport/:epaMonitorFilter/:monitorType/:start/:end	controllers.Query.districtOrderReport(epaMonitorFilter, monitorType, start, end, outputTypeStr="excel")
 
+GET		/MonitorOrder			controllers.Query.monitorOrder
+GET		/MonitorOrderReport/:epaMonitorFilter/:monitorType/:start/:end	controllers.Query.monitorOrderReport(epaMonitorFilter, monitorType, start, end, outputTypeStr="html")
+GET		/Excel/MonitorOrderReport/:epaMonitorFilter/:monitorType/:start/:end	controllers.Query.monitorOrderReport(epaMonitorFilter, monitorType, start, end, outputTypeStr="excel")
+
+GET		/MonitorTypeOverLaw		controllers.Query.monitorTypeOverLaw()
+GET		/MonitorTypeOverLawReport/:epaMonitor/:monitorType/:lawStandard/:start/:end			controllers.Query.mtOverLawReport(epaMonitor,monitorType, lawStandard, start, end, outputTypeStr="html")
+GET		/Excel/MonitorTypeOverLawReport/:epaMonitor/:monitorType/:lawStandard/:start/:end	controllers.Query.mtOverLawReport(epaMonitor,monitorType, lawStandard, start, end, outputTypeStr="excel")
+
 GET		/SiteInfo				controllers.Application.siteInfo
 
 GET		/importEpa				controllers.Application.importEpa
