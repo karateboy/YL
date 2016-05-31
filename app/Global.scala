@@ -13,8 +13,8 @@ object Global extends GlobalSettings {
     Logger.info("Application has started")
     super.onStart(app)
     val importManager = Akka.system.actorOf(Props[ImportManager], name = "ImportManager")
-    
-    Akka.system.scheduler.schedule(Duration(1, MINUTES), Duration(6, HOURS), importManager, ImportYesterday)
+     
+    //Akka.system.scheduler.schedule(Duration(1, MINUTES), Duration(6, HOURS), importManager, ImportYesterday)
   }
 
   override def onStop(app: Application) {
