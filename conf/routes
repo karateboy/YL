@@ -56,5 +56,6 @@ GET		/SiteInfo				controllers.Application.siteInfo
 GET		/importEpa				controllers.Application.importEpa
 GET		/importEpaXLS			controllers.Application.importEpa103
 GET		/importEpaCSV			controllers.Application.importEpa100
+GET		/importXLS97			controllers.Application.importEpa97
 GET		/importPSI				controllers.Application.importPSI
 GET		/updatePSI/:year		controllers.Application.updatePSI(year: Int)

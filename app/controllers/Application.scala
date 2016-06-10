@@ -83,12 +83,25 @@ object Application extends Controller {
     Ok("")
   }
   
+  def importDataAfter(dateStr:String) = Security.Authenticated{
+    val date = DateTime.parse(dateStr)
+    EpaDataImporter.importDataAfter(date)
+    Ok(s"import after ${date.toString()}")
+  } 
+  
   val path = current.path.getAbsolutePath + "/importEPA/"
   
   def importEpa103 = Action{    
     Epa103Importer.importData(path)
     Ok(s"匯入 $path")
   }
+  
+  def importEpa97 = Action{    
+    Epa97Importer.importData(path)
+    Ok(s"匯入 $path")
+  }
+  
+ 
   
   def importEpa100 = Action{
     Epa100Importer.importData(path)

@@ -15,9 +15,15 @@ object EpaDataImporter {
     val worker = Akka.system.actorOf(Props[EpaDataImporter], name = "epaImporter" + (Math.random()*1000).toInt)
     worker ! ImportYesterday
   }
+  
+  def importDataAfter(date:DateTime){
+    val worker = Akka.system.actorOf(Props[EpaDataImporter], name = "epaImporter" + (Math.random()*1000).toInt)
+    worker ! ImportDataAfterDate(date)
+  }
 }
 
 object ImportYesterday
+case class ImportDataAfterDate(date:DateTime)
 case class FinishImport(offset: Int, count: Int, total: Int, date:DateTime)
 
 class EpaDataImporter extends Actor {
@@ -31,6 +37,9 @@ class EpaDataImporter extends Actor {
         importEpaDataTask(alreadyInDb.get/24, 1000, yesterday, self)
       else
         importEpaDataTask(0, 1000, yesterday, self)
+        
+    case ImportDataAfterDate(date)=>
+        importEpaDataTask(0, 1000, date, self)
         
     case FinishImport(offset, count, total, date) =>
       if (total == count) {
