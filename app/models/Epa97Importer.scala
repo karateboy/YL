@@ -27,23 +27,58 @@ object Epa97Importer {
 }
 
 class Epa97Importer extends Actor {
+  val concurrentFile = 20
+  import java.io.File
+  import java.io.FileInputStream
+  import scala.concurrent._
+  import Epa103Importer._
+  
+  def receive = handler(List.empty[File], 0)
 
-  def receive = {
-    case ImportEpa(path) =>
-      val files = Epa103Importer.listAllFiles(path)
-      for (f <- files) {
+  def importFileFuture(f: File) = {
+    val future = Future {
+      blocking {
         importEpaData(f)
         f.delete()
       }
+    }
 
-      Logger.info("Finish import 97")
-      self ! PoisonPill
+    future onFailure ({
+      case ex: Throwable =>
+        Logger.error(s"Failed to import ${f.getAbsolutePath}", ex)
+    })
+
+    future.onComplete { _ => self ! DecCount(f.getAbsolutePath) }
+    f
+  }
+  def handler(pendingList: List[File], nFile: Int): Receive = {
+    case ImportEpa(path) =>
+      val files = listAllFiles(path)
+      val fileList = files.toList
+      val (processing, rest) = (fileList.take(concurrentFile), fileList.drop(concurrentFile))
+
+      for (f <- processing)
+        importFileFuture(f)
+
+      context become handler(rest, processing.length)
+
+    case StartImport(name) =>
+      Logger.info(s"Concurrent $nFile: $name")
+
+    case DecCount(name) =>
+      Logger.info(s"Concurrent $nFile: $name finished")
+      if (pendingList.isEmpty) {
+        context become handler(List.empty[File], nFile - 1)
+        if ((nFile - 1) == 0)
+          Logger.info("Finish import!")
+      } else {
+        context become handler(pendingList.tail, nFile)        
+        importFileFuture(pendingList.head)
+      }
   }
 
-  import java.io.File
-  import java.io.FileInputStream
   def importEpaData(f: File) {
-    Logger.debug(s"Import ${f.getAbsolutePath}")
+    self ! StartImport(s"Import ${f.getAbsolutePath}")
     import scala.collection.mutable.ListBuffer
     val wb = WorkbookFactory.create(new FileInputStream(f));
     val sheet = wb.getSheetAt(0)

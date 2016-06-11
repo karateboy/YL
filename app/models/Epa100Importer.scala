@@ -18,8 +18,6 @@ object Epa100Importer {
     val worker = Akka.system.actorOf(Props[Epa100Importer], name = "epaImporter" + (Math.random() * 1000).toInt)
     worker ! ImportEpa(path)
   }
-  case class StartImport(name: String)
-  case class DecCount(name: String)
 }
 
 class Epa100Importer extends Actor {
