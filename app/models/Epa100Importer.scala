@@ -18,31 +18,51 @@ object Epa100Importer {
     val worker = Akka.system.actorOf(Props[Epa100Importer], name = "epaImporter" + (Math.random() * 1000).toInt)
     worker ! ImportEpa(path)
   }
+  case class IncCount(name:String)
+  case class DecCount(name:String)
 }
 
 class Epa100Importer extends Actor {
   import java.io.File
   import java.io.FileFilter
+  import Epa100Importer._
+  
   def listAllFiles(dir: String) = {
     new java.io.File(dir).listFiles.filter(_.getName.endsWith(".csv"))
   }
-
+  import scala.concurrent._
+  var nFile = 0
   def receive = {
     case ImportEpa(path) =>
       val files = listAllFiles(path)
       for (f <- files) {
-        importEpaData(f)
-        f.delete()
+        Future{
+          blocking{
+            importEpaData(f)
+            f.delete()            
+          }
+        } onFailure({
+          case ex:Throwable=>
+            Logger.error(s"Failed to import ${f.getAbsolutePath}", ex)
+        })
       }
-
-      Logger.info("Finish import")
-      self ! PoisonPill
+    case IncCount(name)=>
+      nFile+=1
+      Logger.info(s"Concurrent $nFile: $name")
+    
+    case DecCount(name)=>
+      nFile-=1
+      Logger.info(s"Concurrent $nFile: $name finished")
+      
+      if(nFile == 0)
+        Logger.info("Finish import!")
+      
   }
 
   import java.io.File
   import scala.io.Source
   def importEpaData(f: File) {
-    Logger.debug(s"Import ${f.getAbsolutePath}")
+    self ! IncCount(s"Import ${f.getAbsolutePath}")
     import scala.collection.mutable.ListBuffer
     val seqData = ListBuffer.empty[Seq[Any]]
 
@@ -108,5 +128,7 @@ class Epa100Importer extends Actor {
         .batch(seqData.toList: _*)
         .apply()
     }
+    
+    self ! DecCount(s"Import ${f.getAbsolutePath}")
   }
 }
