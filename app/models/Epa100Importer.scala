@@ -18,55 +18,75 @@ object Epa100Importer {
     val worker = Akka.system.actorOf(Props[Epa100Importer], name = "epaImporter" + (Math.random() * 1000).toInt)
     worker ! ImportEpa(path)
   }
-  case class IncCount(name:String)
-  case class DecCount(name:String)
+  case class StartImport(name: String)
+  case class DecCount(name: String)
 }
 
 class Epa100Importer extends Actor {
   import java.io.File
   import java.io.FileFilter
   import Epa100Importer._
-  
+
   def listAllFiles(dir: String) = {
     new java.io.File(dir).listFiles.filter(_.getName.endsWith(".csv"))
   }
   import scala.concurrent._
-  var nFile = 0
-  def receive = {
+
+  val concurrentFile = 10
+
+  def receive = handler(List.empty[File], 0)
+
+  def importFileFuture(f: File) = {
+    val future = Future {
+      blocking {
+        importEpaData(f)
+        f.delete()
+      }
+    }
+
+    future onFailure ({
+      case ex: Throwable =>
+        Logger.error(s"Failed to import ${f.getAbsolutePath}", ex)
+    })
+
+    future.onComplete { _ => self ! DecCount(f.getAbsolutePath) }
+    f
+  }
+
+  def handler(pendingList: List[File], nFile: Int): Receive = {
     case ImportEpa(path) =>
       val files = listAllFiles(path)
-      for (f <- files) {
-        Future{
-          blocking{
-            importEpaData(f)
-            f.delete()            
-          }
-        } onFailure({
-          case ex:Throwable=>
-            Logger.error(s"Failed to import ${f.getAbsolutePath}", ex)
-        })
-      }
-    case IncCount(name)=>
-      nFile+=1
+      val fileList = files.toList
+      val (processing, rest) = (fileList.take(concurrentFile), fileList.drop(concurrentFile))
+
+      for (f <- processing)
+        importFileFuture(f)
+
+      context become handler(rest, processing.length)
+
+    case StartImport(name) =>
       Logger.info(s"Concurrent $nFile: $name")
-    
-    case DecCount(name)=>
-      nFile-=1
+
+    case DecCount(name) =>
       Logger.info(s"Concurrent $nFile: $name finished")
-      
-      if(nFile == 0)
-        Logger.info("Finish import!")
-      
+      if (pendingList.isEmpty) {
+        context become handler(List.empty[File], nFile - 1)
+        if ((nFile - 1) == 0)
+          Logger.info("Finish import!")
+      } else {
+        context become handler(pendingList.tail, nFile)        
+        importFileFuture(pendingList.head)
+      }
   }
 
   import java.io.File
   import scala.io.Source
   def importEpaData(f: File) {
-    self ! IncCount(s"Import ${f.getAbsolutePath}")
+    self ! StartImport(s"Import ${f.getAbsolutePath}")
     import scala.collection.mutable.ListBuffer
     val seqData = ListBuffer.empty[Seq[Any]]
 
-    def processLine(line: String){
+    def processLine(line: String) {
       val parts = line.split(",").map { _.replace("\"", "") }.map(_.trim)
       val dateStr = parts(0)
       val site = parts(1).replace("台", "臺")
@@ -103,7 +123,7 @@ class Epa100Importer extends Actor {
       for (line <- Source.fromFile(f).getLines().zipWithIndex) {
         try {
           //skip first line
-          if(line._2 != 0)
+          if (line._2 != 0)
             processLine(line._1)
         } catch {
           case ex: Throwable =>
@@ -128,7 +148,5 @@ class Epa100Importer extends Actor {
         .batch(seqData.toList: _*)
         .apply()
     }
-    
-    self ! DecCount(s"Import ${f.getAbsolutePath}")
   }
 }
