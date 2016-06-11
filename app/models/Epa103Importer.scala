@@ -161,7 +161,7 @@ class Epa103Importer extends Actor {
 
     DB autoCommit { implicit session =>
       sql"""
-        INSERT INTO [dbo].[hour_data]
+        INSERT INTO [dbo].[hour_data_temp]
         ([MStation]
            ,[MDate]
            ,[MItem]

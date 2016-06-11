@@ -27,12 +27,12 @@ object Epa97Importer {
 }
 
 class Epa97Importer extends Actor {
-  val concurrentFile = 20
+  val concurrentFile = 25
   import java.io.File
   import java.io.FileInputStream
   import scala.concurrent._
   import Epa103Importer._
-  
+
   def receive = handler(List.empty[File], 0)
 
   def importFileFuture(f: File) = {
@@ -72,7 +72,7 @@ class Epa97Importer extends Actor {
         if ((nFile - 1) == 0)
           Logger.info("Finish import!")
       } else {
-        context become handler(pendingList.tail, nFile)        
+        context become handler(pendingList.tail, nFile)
         importFileFuture(pendingList.head)
       }
   }
@@ -94,12 +94,18 @@ class Epa97Importer extends Actor {
         try {
           val date = row.getCell(0).getDateCellValue
           val site = row.getCell(1).getStringCellValue
-          val siteId =
-            if (site == "台西")
-              EpaMonitor.map(EpaMonitor.withName("臺西")).id
-            else
-              EpaMonitor.map(EpaMonitor.withName(site)).id
+          val siteId = {
+            val epaVal = try {
+              EpaMonitor.withName(site)
+            } catch {
+              case ex: Throwable =>
+                val replaceSite = site.replace("台", "臺")
+                EpaMonitor.withName(replaceSite)
+            }
 
+            EpaMonitor.map(epaVal).id
+          }
+          
           val mt = row.getCell(2).getStringCellValue
           val itemId = MonitorType.map(MonitorType.withName(mt)).itemId
           val values =
@@ -154,7 +160,7 @@ class Epa97Importer extends Actor {
 
     DB autoCommit { implicit session =>
       sql"""
-        INSERT INTO [dbo].[hour_data]
+        INSERT INTO [dbo].[hour_data_temp]
         ([MStation]
            ,[MDate]
            ,[MItem]
