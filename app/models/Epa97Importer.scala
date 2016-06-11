@@ -27,7 +27,7 @@ object Epa97Importer {
 }
 
 class Epa97Importer extends Actor {
-  val concurrentFile = 25
+  val concurrentFile = 22
   import java.io.File
   import java.io.FileInputStream
   import scala.concurrent._
