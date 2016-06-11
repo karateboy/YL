@@ -32,7 +32,7 @@ case class DecCount(name: String)
 
 
 class Epa103Importer extends Actor {
-  val concurrentFile = 20
+  val concurrentFile = 25
   import java.io.File
   import java.io.FileInputStream
   import scala.concurrent._

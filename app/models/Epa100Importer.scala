@@ -30,7 +30,7 @@ class Epa100Importer extends Actor {
   }
   import scala.concurrent._
 
-  val concurrentFile = 20
+  val concurrentFile = 25
 
   def receive = handler(List.empty[File], 0)
 
