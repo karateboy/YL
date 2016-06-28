@@ -50,7 +50,7 @@ object Application extends Controller {
   def index = Action.async {
     implicit request =>
       {
-        val url = "http://opendata.epa.gov.tw/ws/Data/AQX/?$orderby=SiteName&$skip=0&$top=1000&format=json"
+        val url = "http://223.200.80.137/ws/Data/AQX/?$orderby=SiteName&$skip=0&$top=1000&format=json"
         val sites = List("二林", "線西", "崙背", "斗六", "臺西", "麥寮", "竹山", "嘉義", "朴子")
         WS.url(url).get().map {
           response =>
