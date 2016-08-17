@@ -12,7 +12,7 @@ import java.nio.file._
 import org.apache.poi.ss.usermodel._
 
 object ExcelUtility {
-  val docRoot = "/report_template/"
+  val docRoot = "/public/report_template/"
 
   private def prepareTemplate(templateFile: String) = {
     val templatePath = Paths.get(current.path.getAbsolutePath + docRoot + templateFile)
