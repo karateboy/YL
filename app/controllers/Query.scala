@@ -624,7 +624,7 @@ object Query extends Controller {
           mList = EpaMonitor.normalMonitor.filter { EpaMonitorFilter.filters(epaMonitorFilter) }.
             filter {District.filter(d) } if mList.length > 0
         } yield {
-          val avgList = mList.map{Record.getEpaHourRecordAvg(_, monitorType, start, end).get}
+          val avgList = mList.map{Record.getEpaDailyRecordAvg(_, monitorType, start, end).get}
             .filter { _.isDefined }.map{_.get}
           val monitorNames = mList.map { EpaMonitor.map(_).name }.mkString(", ")
           if(avgList.length != 0)
@@ -662,7 +662,7 @@ object Query extends Controller {
       val orderList =
         for {
           monitor<-EpaMonitor.normalMonitor.filter { EpaMonitorFilter.filters(epaMonitorFilter) }
-          avg = Record.getEpaHourRecordAvg(monitor, monitorType, start, end) if avg.isDefined
+          avg = Record.getEpaDailyRecordAvg(monitor, monitorType, start, end) if avg.isDefined
         } yield {
           (monitor, avg.get)
         }

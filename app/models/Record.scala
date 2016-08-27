@@ -53,6 +53,7 @@ object Record {
       }.single.apply
   }
   
+  /*
   def getEpaHourRecordAvg(epaMonitor: EpaMonitor.Value, monitorType: MonitorType.Value, startTime: DateTime, endTime: DateTime)(implicit session: DBSession = AutoSession) = {
     val start: Timestamp = startTime
     val end: Timestamp = endTime
@@ -65,8 +66,26 @@ object Record {
       """.map {
         rs => rs.floatOpt(1)
       }.single.apply
+  }*/
+
+  def getEpaDailyRecordAvg(epaMonitor: EpaMonitor.Value, monitorType: MonitorType.Value, startTime: DateTime, endTime: DateTime)(implicit session: DBSession = AutoSession) = {
+    val start: Timestamp = startTime
+    val end: Timestamp = endTime
+    val monitorId = EpaMonitor.map(epaMonitor).id
+    val monitorTypeStr = MonitorType.map(monitorType).itemId
+      sql"""
+        Select AVG(daily_avg)
+        from (
+          Select AVG(MValue) as daily_avg
+          From hour_data
+          Where MStation=${monitorId} and MItem=${monitorTypeStr} and MDate >= ${start} and MDate < ${end}
+          group by CAST(MDate as date)
+        ) myTable
+      """.map {
+        rs => rs.floatOpt(1)
+      }.single.apply
   }
-    
+
   def getMtRose(monitor: EpaMonitor.Value, monitorType:MonitorType.Value, start: DateTime, end: DateTime, level:List[Float], nDiv: Int = 16) = {
     val mt_values = getEpaHourRecord(monitor, monitorType, start, end)
     //val wind_dirs = getEpaHourRecord(monitor, MonitorType.windDir, start, end)
