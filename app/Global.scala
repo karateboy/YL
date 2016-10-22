@@ -13,7 +13,11 @@ object Global extends GlobalSettings {
     Logger.info("Application has started")
     super.onStart(app)
     val importManager = Akka.system.actorOf(Props[ImportManager], name = "ImportManager")
-     
+    
+    CdxReceiver.startup
+    //CdxReceiver.getInboxFiles
+    CdxReceiver.parseXML
+
     //Akka.system.scheduler.schedule(Duration(1, MINUTES), Duration(6, HOURS), importManager, ImportYesterday)
   }
 
