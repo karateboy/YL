@@ -26,7 +26,7 @@ object CdxReceiver {
     if (enable) {
       val timer = {
         import scala.concurrent.duration._
-        Akka.system.scheduler.schedule(Duration(5, SECONDS), Duration(5, MINUTES), receiver, GetInBoxFiles)
+        Akka.system.scheduler.schedule(Duration(5, SECONDS), Duration(1, HOURS), receiver, GetInBoxFiles)
       }
     }
 
