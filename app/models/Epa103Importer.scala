@@ -30,14 +30,13 @@ case class ImportEpa(path: String)
 case class StartImport(name: String)
 case class DecCount(name: String)
 
-
 class Epa103Importer extends Actor {
   val concurrentFile = 22
   import java.io.File
   import java.io.FileInputStream
   import scala.concurrent._
   import Epa103Importer._
-  
+
   def receive = handler(List.empty[File], 0)
 
   def importFileFuture(f: File) = {
@@ -77,100 +76,118 @@ class Epa103Importer extends Actor {
         if ((nFile - 1) == 0)
           Logger.info("Finish import!")
       } else {
-        context become handler(pendingList.tail, nFile)        
+        context become handler(pendingList.tail, nFile)
         importFileFuture(pendingList.head)
       }
   }
 
+  case class HourData(MStation: Int, MDate: java.sql.Timestamp, MItem: String, MValue: Double)
+
+  def upsert(seqHourData: List[HourData]) = {
+    DB autoCommit { implicit session =>
+      val seqData = seqHourData map {
+        h =>
+          Seq(h.MStation, h.MDate, h.MItem, h.MStation, h.MDate, h.MItem, h.MValue, h.MValue,
+            h.MStation, h.MDate, h.MItem)
+      }
+      sql"""
+          IF NOT EXISTS (SELECT * FROM hour_data WHERE MStation = ? and MDate = ? and MItem = ?)
+            INSERT INTO hour_data(MStation,MDate, MItem, MValue)
+            VALUES(?,?,?,?)
+          ELSE
+            UPDATE hour_data
+            SET MValue = ?
+            WHERE MStation = ? and MDate = ? and MItem = ?
+        """
+        .batch(seqData: _*)
+        .apply()
+    }
+  }
+
   def importEpaData(f: File) {
     self ! StartImport(s"Import ${f.getAbsolutePath}")
-    
+
     import scala.collection.mutable.ListBuffer
     val wb = WorkbookFactory.create(new FileInputStream(f));
     val sheet = wb.getSheetAt(0)
 
     var rowN = 1
     var finish = false
-    val seqData = ListBuffer.empty[Seq[Any]]
+    val seqHourData = ListBuffer.empty[HourData]
+    
     do {
       var row = sheet.getRow(rowN)
       if (row == null)
         finish = true
       else {
-        try{
-                  val dateStr = row.getCell(0).getStringCellValue
-        val site = row.getCell(1).getStringCellValue
-        val siteId =
-          if(site == "台西")
-            EpaMonitor.map(EpaMonitor.withName("臺西")).id
-          else
-            EpaMonitor.map(EpaMonitor.withName(site)).id
-          
-            
-        val mt = row.getCell(2).getStringCellValue
-        val itemId = MonitorType.map(MonitorType.withName(mt)).itemId
-        val values =
-          for (col <- 3 to 3 + 23) yield {
-            try {
-              val v = row.getCell(col).getNumericCellValue
-              Some(v.toFloat)
-            } catch {
-              case _: Throwable =>
-                {
-                  try {
-                    val valStr = row.getCell(col).getStringCellValue
-                    if (valStr.isEmpty())
-                      None
-                    else if (valStr.equalsIgnoreCase("NR"))
-                      Some(0f)
-                    else {
-                      try {
-                        Some(valStr.toFloat)
-                      } catch {
-                        case _: Throwable =>
-                          None
+        try {
+          val dateStr = row.getCell(0).getStringCellValue
+          val site = row.getCell(1).getStringCellValue
+          val siteId =
+            if (site == "台西")
+              EpaMonitor.map(EpaMonitor.withName("臺西")).id
+            else
+              EpaMonitor.map(EpaMonitor.withName(site)).id
+
+          val mt = row.getCell(2).getStringCellValue
+          val itemId = MonitorType.map(MonitorType.withName(mt)).itemId
+          val values =
+            for (col <- 3 to 3 + 23) yield {
+              try {
+                val v = row.getCell(col).getNumericCellValue
+                Some(v.toFloat)
+              } catch {
+                case _: Throwable =>
+                  {
+                    try {
+                      val valStr = row.getCell(col).getStringCellValue
+                      if (valStr.isEmpty())
+                        None
+                      else if (valStr.equalsIgnoreCase("NR"))
+                        Some(0f)
+                      else {
+                        try {
+                          Some(valStr.toFloat)
+                        } catch {
+                          case _: Throwable =>
+                            None
+                        }
                       }
-                    }
-                  }catch{
+                    } catch {
                       case _: Throwable =>
-                          None
+                        None
+                    }
                   }
-                }
+              }
             }
+
+          def appendHr(value: Option[Float], offset: Int) = {
+            val ts: java.sql.Timestamp = DateTime.parse(dateStr, DateTimeFormat.forPattern("YYYY/MM/dd")) + offset.hour
+            if(value.isDefined)
+              seqHourData.append(HourData(siteId, ts, itemId, value.get))
           }
 
-        def appendHr(value: Option[Float], offset: Int) = {
-          val ts: java.sql.Timestamp = DateTime.parse(dateStr, DateTimeFormat.forPattern("YYYY/MM/dd")) + offset.hour
-          seqData.append(Seq(siteId, ts, itemId, value))
-        }
+          for (v <- values.zipWithIndex)
+            appendHr(v._1, v._2)
 
-        for (v <- values.zipWithIndex)
-          appendHr(v._1, v._2)
-          
-        }catch{
-          case ex: Throwable=>
+        } catch {
+          case ex: Throwable =>
             Logger.error(ex.getMessage)
             Logger.error("Ignore this row")
         }
-          
-        rowN+=1
+
+        rowN += 1
       }
     } while (!finish)
 
     wb.close()
 
-    DB autoCommit { implicit session =>
-      sql"""
-        INSERT INTO [dbo].[hour_data_temp]
-        ([MStation]
-           ,[MDate]
-           ,[MItem]
-           ,[MValue])
-        values (
-        ?,?,?,?)
-        """
-        .batch(seqData.toList: _*)
-        .apply()
+    Logger.info(s"Total ${seqHourData.length} hour records")
+    try{
+      upsert(seqHourData.toList)
+    }catch{
+      case ex:Throwable=>
+        Logger.error("fail to upsert!", ex)
     }
   }
 }

@@ -177,7 +177,7 @@ class CdxReceiver extends Actor with ActorLogging {
     }
 
     import scalikejdbc._
-    case class HourData(MStation:String, MDate:java.sql.Timestamp, MItem:String, MValue:Double)
+    case class HourData(MStation:Int, MDate:java.sql.Timestamp, MItem:String, MValue:Double)
   
     def upsert(seqHourData:List[HourData]) = {
       DB autoCommit { implicit session =>
@@ -209,7 +209,7 @@ class CdxReceiver extends Actor with ActorLogging {
       mt = mtValuePair._1
       value <- mtValuePair._2
     } yield
-      HourData(EpaMonitor.map(monitor).id.toString, value._1, mt, value._2)
+      HourData(EpaMonitor.map(monitor).id, value._1, mt, value._2)
     
     Logger.info(s"correct data=$correctCount")
     Logger.info(s"${hourData.toList.length} records")
