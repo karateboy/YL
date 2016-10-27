@@ -121,7 +121,6 @@ object Record {
     }
 
     val dailySeqList = getDailySeq(recordList)
-    Logger.debug(s"${dailySeqList.length} days")
     val effectiveDailyAvgList = dailySeqList.flatMap { seq =>
       val length = seq.length
       if (length >= 16) {
@@ -129,7 +128,7 @@ object Record {
       } else
         None
     }
-    Logger.debug(s"effective ${effectiveDailyAvgList.length} days")
+
     if(effectiveDailyAvgList.length > 0)
       Some(effectiveDailyAvgList.sum/effectiveDailyAvgList.length)
     else
