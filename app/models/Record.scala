@@ -14,45 +14,45 @@ object Record {
     val end: Timestamp = endTime
     val monitorId = EpaMonitor.map(epaMonitor).id
     val monitorTypeStr = MonitorType.map(monitorType).itemId
-      sql"""
+    sql"""
         Select * 
         From hour_data
         Where MStation=${monitorId} and MItem=${monitorTypeStr} and MDate >= ${start} and MDate < ${end}
         ORDER BY MDate ASC
       """.map {
-        rs => EpaHourRecord(EpaMonitor.idMap(rs.int(2)), rs.timestamp(3), MonitorType.epaMap(rs.string(4)), rs.floatOpt(5))
-      }.list().apply()
+      rs => EpaHourRecord(EpaMonitor.idMap(rs.int(2)), rs.timestamp(3), MonitorType.epaMap(rs.string(4)), rs.floatOpt(5))
+    }.list().apply()
   }
-  
-  def getEpaHourRecordOver(epaMonitor: EpaMonitor.Value, monitorType: MonitorType.Value, startTime: DateTime, endTime: DateTime, threshold:Float)(implicit session: DBSession = AutoSession) = {
+
+  def getEpaHourRecordOver(epaMonitor: EpaMonitor.Value, monitorType: MonitorType.Value, startTime: DateTime, endTime: DateTime, threshold: Float)(implicit session: DBSession = AutoSession) = {
     val start: Timestamp = startTime
     val end: Timestamp = endTime
     val monitorId = EpaMonitor.map(epaMonitor).id
     val monitorTypeStr = MonitorType.map(monitorType).itemId
-      sql"""
+    sql"""
         Select * 
         From hour_data
         Where MStation=${monitorId} and MItem=${monitorTypeStr} and MDate >= ${start} and MDate < ${end} and [MValue] > ${threshold}
         ORDER BY MDate ASC
       """.map {
-        rs => EpaHourRecord(EpaMonitor.idMap(rs.int(2)), rs.timestamp(3), MonitorType.epaMap(rs.string(4)), rs.floatOpt(5))
-      }.list().apply()
+      rs => EpaHourRecord(EpaMonitor.idMap(rs.int(2)), rs.timestamp(3), MonitorType.epaMap(rs.string(4)), rs.floatOpt(5))
+    }.list().apply()
   }
-  
-  def getEpaHourRecordOverCount(epaMonitor: EpaMonitor.Value, monitorType: MonitorType.Value, startTime: DateTime, endTime: DateTime, threshold:Float)(implicit session: DBSession = AutoSession) = {
+
+  def getEpaHourRecordOverCount(epaMonitor: EpaMonitor.Value, monitorType: MonitorType.Value, startTime: DateTime, endTime: DateTime, threshold: Float)(implicit session: DBSession = AutoSession) = {
     val start: Timestamp = startTime
     val end: Timestamp = endTime
     val monitorId = EpaMonitor.map(epaMonitor).id
     val monitorTypeStr = MonitorType.map(monitorType).itemId
-      sql"""
+    sql"""
         Select count(*) 
         From hour_data
         Where MStation=${monitorId} and MItem=${monitorTypeStr} and MDate >= ${start} and MDate < ${end} and [MValue] > ${threshold}
       """.map {
-        rs => rs.int(1)
-      }.single.apply
+      rs => rs.int(1)
+    }.single.apply
   }
-  
+
   /*
   def getEpaHourRecordAvg(epaMonitor: EpaMonitor.Value, monitorType: MonitorType.Value, startTime: DateTime, endTime: DateTime)(implicit session: DBSession = AutoSession) = {
     val start: Timestamp = startTime
@@ -68,6 +68,7 @@ object Record {
       }.single.apply
   }*/
 
+  /*
   def getEpaDailyRecordAvg(epaMonitor: EpaMonitor.Value, monitorType: MonitorType.Value, startTime: DateTime, endTime: DateTime)(implicit session: DBSession = AutoSession) = {
     val start: Timestamp = startTime
     val end: Timestamp = endTime
@@ -85,8 +86,57 @@ object Record {
         rs => rs.floatOpt(1)
       }.single.apply
   }
+  * 
+  */
 
-  def getMtRose(monitor: EpaMonitor.Value, monitorType:MonitorType.Value, start: DateTime, end: DateTime, level:List[Float], nDiv: Int = 16) = {
+  def getEpaDailyRecordAvg(epaMonitor: EpaMonitor.Value, monitorType: MonitorType.Value, startTime: DateTime, endTime: DateTime)(implicit session: DBSession = AutoSession) = {
+    val start: Timestamp = startTime
+    val end: Timestamp = endTime
+    val monitorId = EpaMonitor.map(epaMonitor).id
+    val monitorTypeStr = MonitorType.map(monitorType).itemId
+    val recordList =
+      sql"""
+        Select [MDate], [MValue]
+      ,[MValue] 
+        From hour_data
+        Where MStation=${monitorId} and MItem=${monitorTypeStr} and MDate >= ${start} and MDate < ${end} and MValue is Not Null
+        Order by MDate
+      """.map {
+        rs => (rs.timestamp(1), rs.float(2))
+      }.list.apply
+
+    def getDailySeq(dataList: List[(Timestamp, Float)]): Seq[Seq[Float]] = {
+      if (dataList.isEmpty)
+        Seq.empty[Seq[Float]]
+      else {
+        val date: DateTime = dataList.head._1
+        val dailyData = dataList.takeWhile { p =>
+          val dataTime: DateTime = p._1
+          date.toLocalDate() == dataTime.toLocalDate()
+        }
+
+        val remain = dataList.drop(dailyData.length)
+        dailyData.map { _._2 } +: getDailySeq(remain)
+      }
+    }
+
+    val dailySeqList = getDailySeq(recordList)
+    Logger.debug(s"${dailySeqList.length} days")
+    val effectiveDailyAvgList = dailySeqList.flatMap { seq =>
+      val length = seq.length
+      if (length >= 16) {
+        Some(seq.sum / length)
+      } else
+        None
+    }
+    Logger.debug(s"effective ${effectiveDailyAvgList.length} days")
+    if(effectiveDailyAvgList.length > 0)
+      Some(effectiveDailyAvgList.sum/effectiveDailyAvgList.length)
+    else
+      None
+  }
+
+  def getMtRose(monitor: EpaMonitor.Value, monitorType: MonitorType.Value, start: DateTime, end: DateTime, level: List[Float], nDiv: Int = 16) = {
     val mt_values = getEpaHourRecord(monitor, monitorType, start, end)
     //val wind_dirs = getEpaHourRecord(monitor, MonitorType.windDir, start, end)
     val wind_dirs = List.empty[Record.EpaHourRecord]
@@ -103,26 +153,26 @@ object Record {
     var total = 0
     for (w <- windRecords) {
       if (w._1.time == w._2.time && w._1.value.isDefined && w._2.value.isDefined) {
-        val dir = (Math.ceil((w._1.value.get - (step/2)) / step).toInt)% nDiv
+        val dir = (Math.ceil((w._1.value.get - (step / 2)) / step).toInt) % nDiv
         windMap(dir) += w._2.value.get
         total += 1
       }
     }
 
     def winSpeedPercent(winSpeedList: ListBuffer[Float]) = {
-      val count = new Array[Float](level.length+1)
-      def getIdx(v:Float):Int={
-        for(i <- 0 to level.length-1){
-          if(v < level(i))
+      val count = new Array[Float](level.length + 1)
+      def getIdx(v: Float): Int = {
+        for (i <- 0 to level.length - 1) {
+          if (v < level(i))
             return i
         }
-        
+
         return level.length
       }
-      
+
       for (w <- winSpeedList) {
         val i = getIdx(w)
-        count(i) +=1
+        count(i) += 1
       }
 
       assert(total != 0)
