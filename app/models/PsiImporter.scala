@@ -71,7 +71,15 @@ class PsiImporter extends Actor {
                 newID    
             }
 
-          val dateVal = row.getCell(1).getDateCellValue
+          Logger.debug(row.getCell(1).getStringCellValue)          
+          val dateVal = try{
+            row.getCell(1).getDateCellValue
+          }catch{
+            case _:Exception=>
+              val str = row.getCell(1).getStringCellValue
+              DateTime.parse(str, DateTimeFormat.forPattern("YYYY/MM/dd HH:mm")).toDate()
+          }
+            
           
           val v =
             for (col <- 2 to 7) yield {

@@ -357,6 +357,7 @@
 	<thead>
 		<tr>
 			<th>測站名稱</th>
+			<th>測站分類</th>
 			<th>縣市</th>
 			<th>PSI</th>
 			<th>SO2</th>
@@ -385,11 +386,13 @@
 			<td>-</td>
 			<td>-</td>
 			<td>-</td>
+			<td>-</td>
 		</tr>
 	}else{
 		@for(data<-dataList){
 			<tr>
 				<td>@data.siteName</td>
+				<td>@data.siteType.get</td>
 				<td>@data.county</td>
 				<td>@data.psi</td>
 				<td>@data.so2</td>

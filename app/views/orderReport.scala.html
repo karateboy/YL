@@ -1,7 +1,7 @@
 @* orderReport Template File *@
 @import com.github.nscala_time.time.Imports._
 @(mt:MonitorType.Value, monitorFilterExplain:String, start:DateTime, end:DateTime, records: List[((District.Value, String, Option[Float]), Int)])
-<H3>行政轄區@{MonitorType.map(mt).desp}排序:(@monitorFilterExplain)</H3>
+<H3>行政轄區@{MonitorType.map(mt).desp}(@MonitorType.map(mt).unit)排序:(@monitorFilterExplain)</H3>
 <H5>區間:@start.toString("YYYY-MM-dd HH:mm")~@end.toString("YYYY-MM-dd HH:mm")</H5>
 
 <table id="historyReport" class="table">

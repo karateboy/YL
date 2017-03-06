@@ -1,7 +1,7 @@
 @* monitorOrderReport Template File *@
 @import com.github.nscala_time.time.Imports._
 @(mt:MonitorType.Value, monitorFilterExplain:String, start:DateTime, end:DateTime, records: List[((EpaMonitor.Value, Option[Float]), Int)])
-<H3>測站@{MonitorType.map(mt).desp}排序:(@monitorFilterExplain)</H3>
+<H3>測站@{MonitorType.map(mt).desp}(@MonitorType.map(mt).unit)排序:(@monitorFilterExplain)</H3>
 <H5>區間:@start.toString("YYYY-MM-dd HH:mm")~@end.toString("YYYY-MM-dd HH:mm")</H5>
 
 <table id="historyReport" class="table">

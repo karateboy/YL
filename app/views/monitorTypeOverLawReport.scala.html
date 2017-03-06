@@ -3,7 +3,7 @@
 @import com.github.nscala_time.time.Imports._
 @(mt:MonitorType.Value, lawStand:Float, start:DateTime, end:DateTime, records:List[((EpaMonitor.Value, Int), Int)])
 
-<H3>@MonitorType.map(mt).desp 超標統計 (法規值: @lawStand )</H3>
+<H3>@MonitorType.map(mt).desp (@MonitorType.map(mt).unit)超標統計 (法規值: @lawStand )</H3>
 <H5>區間:@start.toString("YYYY-MM-dd HH:mm")~@end.toString("YYYY-MM-dd HH:mm")</H5>
 
 <table id="historyReport" class="table">

@@ -31,7 +31,10 @@ object Application extends Controller {
     no2: String,
     windSpeed: String,
     windDir: String,
-    publishTime: String)
+    publishTime: String,
+    var siteType: Option[String]){
+    
+  }
 
   implicit val epaRealtimeDataRead: Reads[EpaRealtimeData] =
     ((__ \ "SiteName").read[String] and
@@ -45,13 +48,26 @@ object Application extends Controller {
       (__ \ "NO2").read[String] and
       (__ \ "WindSpeed").read[String] and
       (__ \ "WindDirec").read[String] and
-      (__ \ "PublishTime").read[String])(EpaRealtimeData.apply _)
+      (__ \ "PublishTime").read[String] and
+      (__ \ "siteType").readNullable[String]
+      )(EpaRealtimeData.apply _)
 
   def index = Action.async {
     implicit request =>
       {
         val url = "http://223.200.80.137/ws/Data/AQX/?$orderby=SiteName&$skip=0&$top=1000&format=json"
         val sites = List("二林", "線西", "崙背", "斗六", "臺西", "麥寮", "竹山", "嘉義", "朴子")
+        val siteTypeMap = Map(
+            "二林"->"一般測站",
+            "線西"->"工業測站", 
+            "崙背"->"一般測站", 
+            "斗六"->"一般測站", 
+            "臺西"->"工業測站", 
+            "麥寮"->"工業測站", 
+            "竹山"->"一般測站", 
+            "嘉義"->"一般測站", 
+            "朴子"->"一般測站"
+            )
         WS.url(url).get().map {
           response =>
             try {
@@ -62,8 +78,12 @@ object Application extends Controller {
                   Ok(views.html.realtime(Seq.empty[EpaRealtimeData]))
                 },
                 data => {
-                  val kh_data = data.filter { d => sites.contains(d.siteName) }.sortBy { d => sites.indexOf(d.siteName) }
-                  Ok(views.html.realtime(kh_data))
+                  val rt_data = data.filter { d => sites.contains(d.siteName) }.map{
+                    info =>
+                      info.siteType = Some(siteTypeMap(info.siteName))
+                      info
+                  }.sortBy { d => sites.indexOf(d.siteName) }
+                  Ok(views.html.realtime(rt_data))
                 })
             } catch {
               case ex: Exception =>
