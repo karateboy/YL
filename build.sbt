@@ -1,6 +1,6 @@
 name := """YL"""
 
-version := "1.1.4"
+version := "1.1.5"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
@@ -12,9 +12,9 @@ libraryDependencies ++= Seq(
   ws,
   specs2 % Test,
   "com.github.nscala-time" %% "nscala-time" % "2.16.0",
-  "org.scalikejdbc" %% "scalikejdbc"                  % "2.3.1",
-  "org.scalikejdbc" %% "scalikejdbc-config"           % "2.3.1",
-  "org.scalikejdbc" %% "scalikejdbc-play-initializer" % "2.4.3", 
+  "org.scalikejdbc" %% "scalikejdbc"                  % "2.4.1",
+  "org.scalikejdbc" %% "scalikejdbc-config"           % "2.4.1",
+  "org.scalikejdbc" %% "scalikejdbc-play-initializer" % "2.5.1",
   "org.json4s" %% "json4s-native" % "3.3.0",
   "org.json4s" %% "json4s-ext" % "3.3.0" 
 )
