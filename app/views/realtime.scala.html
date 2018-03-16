@@ -1,5 +1,4 @@
 @* realtime Template File *@
-@import Application.EpaRealtimeData
 @(dataList: Seq[EpaRealtimeData])
 <!DOCTYPE html>
 <!--[if IE 8]>			<html class="ie ie8"> <![endif]-->
@@ -359,7 +358,7 @@
 			<th>測站名稱</th>
 			<th>測站分類</th>
 			<th>縣市</th>
-			<th>PSI</th>
+			<th>AQI</th>
 			<th>SO2</th>
 			<th>CO</th>
 			<th>O3</th>
@@ -394,7 +393,7 @@
 				<td>@data.siteName</td>
 				<td>@data.siteType.get</td>
 				<td>@data.county</td>
-				<td>@data.psi</td>
+				<td>@data.aqi</td>
 				<td>@data.so2</td>
 				<td>@data.co</td>
 				<td>@data.o3</td>
@@ -402,7 +401,7 @@
 				<td>@data.pm25</td>
 				<td>@data.no2</td>
 				<td>@data.windSpeed</td>
-				<td>@data.windDir</td>
+				<td>@data.windDirec</td>
 				<td>@data.publishTime</td>
 			</tr>
 		}
