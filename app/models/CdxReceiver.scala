@@ -29,7 +29,6 @@ object CdxReceiver {
         Akka.system.scheduler.schedule(Duration(5, SECONDS), Duration(1, HOURS), receiver, GetInBoxFiles)
       }
     }
-
   }
 
   def getInboxFiles = {
@@ -139,28 +138,30 @@ class CdxReceiver extends Actor with ActorLogging {
       val monitorDateOpt = data.attribute("MonitorDate")
 
       try {
-        correctCount+=1
+        correctCount += 1
         if (siteIdOpt.isDefined && itemIdOpt.isDefined && monitorDateOpt.isDefined) {
-          val epaMonitor = EpaMonitor.idMap(siteIdOpt.get.text.toInt)
-          val monitorType = itemIdOpt.get.text
-          val mDate = DateTime.parse(s"${monitorDateOpt.get.text}", DateTimeFormat.forPattern("YYYY-MM-dd"))
+          for {
+            epaMonitor <- EpaMonitor.idMap.get(siteIdOpt.get.text.toInt)
+            monitorType <- itemIdOpt
+            mDate = DateTime.parse(s"${monitorDateOpt.get.text}", DateTimeFormat.forPattern("YYYY-MM-dd"))
+            mtMap = recordMap.getOrElseUpdate(epaMonitor, Map.empty[String, Seq[(DateTime, Double)]])
+          } {
+            val monitorNodeValueSeq =
+              for (v <- 0 to 23)
+                yield (mDate + v.hour, data.attribute("MonitorValue%02d".format(v)))
 
-          val mtMap = recordMap.getOrElseUpdate(epaMonitor, Map.empty[String, Seq[(DateTime, Double)]])
-          val monitorNodeValueSeq =
-            for (v <- 0 to 23)
-              yield (mDate + v.hour, data.attribute("MonitorValue%02d".format(v)))
-
-          val mtValueSeq = monitorNodeValueSeq.filter(_._2.isDefined).filter { node =>
-            val validNumber = try {
-              node._2.get.text.toDouble
-              true
-            } catch {
-              case _: NumberFormatException =>
-                false
-            }
-            validNumber
-          }.map(n => (n._1, n._2.get.text.toDouble))
-          mtMap.put(monitorType, mtValueSeq)
+            val mtValueSeq = monitorNodeValueSeq.filter(_._2.isDefined).filter { node =>
+              val validNumber = try {
+                node._2.get.text.toDouble
+                true
+              } catch {
+                case _: NumberFormatException =>
+                  false
+              }
+              validNumber
+            }.map(n => (n._1, n._2.get.text.toDouble))
+            mtMap.put(monitorType.text, mtValueSeq)
+          }
         }
       } catch {
         case ex: Throwable =>
@@ -177,13 +178,13 @@ class CdxReceiver extends Actor with ActorLogging {
     }
 
     import scalikejdbc._
-    case class HourData(MStation:Int, MDate:java.sql.Timestamp, MItem:String, MValue:Double)
-  
-    def upsert(seqHourData:List[HourData]) = {
+    case class HourData(MStation: Int, MDate: java.sql.Timestamp, MItem: String, MValue: Double)
+
+    def upsert(seqHourData: List[HourData]) = {
       DB autoCommit { implicit session =>
         val seqData = seqHourData map {
           h =>
-          Seq(h.MStation, h.MDate, h.MItem, h.MStation, h.MDate, h.MItem, h.MValue, h.MValue, 
+            Seq(h.MStation, h.MDate, h.MItem, h.MStation, h.MDate, h.MItem, h.MValue, h.MValue,
               h.MStation, h.MDate, h.MItem)
         }
         sql"""
@@ -200,17 +201,16 @@ class CdxReceiver extends Actor with ActorLogging {
       }
     }
     import models.ModelHelper._
-    val hourData = 
-    for {
-      monitorMap <- recordMap
-      monitor = monitorMap._1
-      mtMaps = monitorMap._2
-      mtValuePair <- mtMaps
-      mt = mtValuePair._1
-      value <- mtValuePair._2
-    } yield
-      HourData(EpaMonitor.map(monitor).id, value._1, mt, value._2)
-    
+    val hourData =
+      for {
+        monitorMap <- recordMap
+        monitor = monitorMap._1
+        mtMaps = monitorMap._2
+        mtValuePair <- mtMaps
+        mt = mtValuePair._1
+        value <- mtValuePair._2
+      } yield HourData(EpaMonitor.map(monitor).id, value._1, mt, value._2)
+
     Logger.info(s"correct data=$correctCount")
     Logger.info(s"${hourData.toList.length} records")
     upsert(hourData.toList)
